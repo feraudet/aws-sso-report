@@ -33,6 +33,60 @@ Generate detailed reports of AWS IAM Identity Center (AWS SSO) users, groups, ro
    pip install -r requirements.txt
    ```
 
+## AWS Requirements
+
+⚠️ **Important**: This script must be executed from the **AWS Organization management account** (root account) where IAM Identity Center is configured.
+
+### Minimal IAM Policy
+
+The user or role executing this script requires the following minimal permissions:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "IAMIdentityCenterRead",
+            "Effect": "Allow",
+            "Action": [
+                "sso-admin:ListInstances",
+                "sso-admin:ListPermissionSets",
+                "sso-admin:DescribePermissionSet",
+                "sso-admin:ListAccountAssignments",
+                "sso-admin:ListManagedPoliciesInPermissionSet",
+                "sso-admin:GetInlinePolicyForPermissionSet"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "IdentityStoreRead",
+            "Effect": "Allow",
+            "Action": [
+                "identitystore:ListUsers",
+                "identitystore:ListGroups",
+                "identitystore:ListGroupMemberships"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "OrganizationsRead",
+            "Effect": "Allow",
+            "Action": [
+                "organizations:ListAccounts",
+                "organizations:DescribeAccount"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+### AWS Account Context
+
+- **Management Account**: Script must run from the AWS Organization's management account
+- **IAM Identity Center**: Must be enabled in the organization
+- **Permissions**: The executing user/role needs the above minimal policy attached
+
 ## Usage
 
 1. **Configure AWS authentication** (SSO, profile, env vars, etc). Example for SSO:
