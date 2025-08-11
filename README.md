@@ -8,6 +8,7 @@ Generate detailed reports of AWS IAM Identity Center (AWS SSO) users, groups, ro
 
 ## Features
 - Exports user/group/account/role mapping to CSV, Excel (.xlsx), HTML (with filters), and JSON
+- **Role permission analysis**: Automatically classifies each role as `read-only`, `read-write`, or `full-admin`
 - Handles direct and group-based assignments
 - Optimized API usage with caching
 - Progress and timing information
@@ -49,13 +50,43 @@ Generate detailed reports of AWS IAM Identity Center (AWS SSO) users, groups, ro
    - `iam_identity_center_report.csv` (spreadsheet)
    - `iam_identity_center_report.xlsx` (Excel)
    - `iam_identity_center_report.html` (interactive web table, **with filters/search/sort on every column**)
-   - `iam_identity_center_report.json` (raw data)
+   - `iam_identity_center_report.json` (structured data with role permission analysis)
 
 ## Output Example
 
+### CSV/Excel/HTML Format:
 | User | Groups | AWS Accounts |
 |------|--------|--------------|
-| ...  | ...    | ...          |
+| user@example.com | Group1, Group2 | Account1 (role1, role2) |
+
+### JSON Format (with role analysis):
+```json
+{
+  "User": "user@example.com",
+  "Groups": ["Group1", "Group2"],
+  "AWS Accounts": [
+    {
+      "account_name": "Production Account",
+      "account_id": "123456789012",
+      "roles": [
+        {
+          "name": "AdminRole",
+          "access_level": "full-admin"
+        },
+        {
+          "name": "ReadOnlyRole", 
+          "access_level": "read-only"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Role Access Levels:**
+- `read-only`: Only read/list/describe permissions
+- `read-write`: Read + write/modify permissions, but not administrative
+- `full-admin`: Administrative access or wildcard permissions
 
 ## Testing
 
