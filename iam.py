@@ -1,7 +1,3 @@
-import boto3
-import csv
-import os
-
 #!/usr/bin/env python3
 """
 AWS IAM Identity Center (SSO) Reporting Script
@@ -25,12 +21,12 @@ See README.md for full usage and documentation.
 __author__ = "Cyril Feraudet"
 import boto3
 import csv
-import os
 from datetime import datetime
 from openpyxl import Workbook
 
 # Set the AWS profile to use
-# Utilise la configuration d'authentification par défaut de boto3 (variables d'env, AWS_PROFILE, SSO, etc)
+# Utilise la configuration d'authentification par défaut de boto3
+# (variables d'env, AWS_PROFILE, SSO, etc)
 session = boto3.Session()
 
 # Required clients
@@ -71,8 +67,10 @@ for group in groups:
     group_id_to_name[group_id] = group['DisplayName']
     group_id_to_members[group_id] = set()
     # Cache all members of the group
-    pag = identitystore.get_paginator('list_group_memberships')
-    for page in pag.paginate(IdentityStoreId=identity_store_id, GroupId=group_id):
+    paginator = identitystore.get_paginator(
+        'list_group_memberships')
+    for page in paginator.paginate(
+            IdentityStoreId=identity_store_id, GroupId=group_id):
         for membership in page['GroupMemberships']:
             member = membership['MemberId']
             if 'UserId' in member:
@@ -118,6 +116,8 @@ print('Assignment cache built.')
 
 # --- Helper functions using cache ---
 
+
+
 def get_user_groups(user_id):
     user_groups = []
     for group_id, members in group_id_to_members.items():
@@ -126,29 +126,34 @@ def get_user_groups(user_id):
     return user_groups
 
 def get_user_account_roles(user_id):
-    # Return: (set of all accounts where user has at least one role, set of all roles assigned)
     user_accounts = set()
     user_roles = set()
-    # Get all groups the user is a member of
     user_groups = set()
     for group_id, members in group_id_to_members.items():
         if user_id in members:
             user_groups.add(group_id)
     for (account_id, permission_set_arn), assigns in assignments.items():
         for assignment in assigns:
-            if assignment['PrincipalType'] == 'USER' and assignment['PrincipalId'] == user_id:
+            if (assignment['PrincipalType'] == 'USER'
+                    and assignment['PrincipalId'] == user_id):
                 user_accounts.add(account_id)
                 user_roles.add(permission_set_arn)
-            if assignment['PrincipalType'] == 'GROUP' and assignment['PrincipalId'] in user_groups:
+            if (assignment['PrincipalType'] == 'GROUP'
+                    and assignment['PrincipalId'] in user_groups):
                 user_accounts.add(account_id)
                 user_roles.add(permission_set_arn)
     return user_accounts, user_roles
 
+
+
 def get_permission_set_name(permission_set_arn):
-    return permission_set_arn_to_name.get(permission_set_arn, permission_set_arn)
+    return permission_set_arn_to_name.get(permission_set_arn,
+                                          permission_set_arn)
+
 
 def get_account_name(account_id):
     return account_id_to_name.get(account_id, account_id)
+
 
 print('Generating CSV and XLSX report...')
 fieldnames = ['User', 'Groups', 'AWS Accounts']
@@ -168,28 +173,37 @@ for idx, user in enumerate(users, 1):
             user_groups_ids.add(group_id)
     for (account_id, permission_set_arn), assigns in assignments.items():
         for assignment in assigns:
-            if (assignment['PrincipalType'] == 'USER' and assignment['PrincipalId'] == user_id) or \
-               (assignment['PrincipalType'] == 'GROUP' and assignment['PrincipalId'] in user_groups_ids):
+            if ((assignment['PrincipalType'] == 'USER'
+                 and assignment['PrincipalId'] == user_id)
+                or (assignment['PrincipalType'] == 'GROUP'
+                    and assignment['PrincipalId'] in user_groups_ids)):
                 if account_id not in accounts_roles:
                     accounts_roles[account_id] = set()
                 accounts_roles[account_id].add(permission_set_arn)
-    # Format AWS Accounts column: one line per account, with roles in parentheses
+    # Format AWS Accounts column: one line per account, with roles in
+    # parentheses
     aws_accounts_lines = []
     for acc_id in sorted(accounts_roles.keys(), key=lambda x: get_account_name(x)):
         acc_name = get_account_name(acc_id)
         role_names = [get_permission_set_name(arn) for arn in sorted(accounts_roles[acc_id])]
-        aws_accounts_lines.append(f"{acc_name} ({', '.join(role_names)})")
+        aws_accounts_lines.append(
+            f"{acc_name} ({', '.join(role_names)})")
     # Format Groups with line separator
     groups_str = '\n'.join(groups)
     aws_accounts_str = '\n'.join(aws_accounts_lines)
     if username == 'cyril.feraudet@nuant.com':
         print("[DEBUG] --- Cyril account/role mapping ---")
         for acc_id, role_arns in accounts_roles.items():
-            print(f"[DEBUG] Cyril: AccountId={acc_id}, AccountName={get_account_name(acc_id)}, Roles={[get_permission_set_name(arn) for arn in role_arns]}")
+            roles = [get_permission_set_name(arn) for arn in role_arns]
+            print(f"[DEBUG] Cyril: AccountId={acc_id}, "
+                  f"AccountName={get_account_name(acc_id)}, "
+                  f"Roles={roles}")
         print("[DEBUG] --- All known accounts ---")
         for acc_id in sorted(account_id_to_name.keys()):
-            print(f"[DEBUG] Known: AccountId={acc_id}, AccountName={account_id_to_name[acc_id]}")
-        print(f"[DEBUG] Cyril - Final CSV Accounts: {aws_accounts_lines}")
+            print(f"[DEBUG] Known: AccountId={acc_id}, "
+                  f"AccountName={account_id_to_name[acc_id]}")
+        print(f"[DEBUG] Cyril - Final CSV Accounts: "
+              f"{aws_accounts_lines}")
     # Structure pour JSON : comptes avec rôles en listes
     aws_accounts_json = []
     for acc_id in sorted(accounts_roles.keys(), key=lambda x: get_account_name(x)):
@@ -200,29 +214,34 @@ for idx, user in enumerate(users, 1):
             'account_id': acc_id,
             'roles': role_names
         })
-    
+
     row = {
         'User': username,
         'Groups': groups_str,
         'AWS Accounts': aws_accounts_str,
         '_groups_list': groups,  # pour JSON
-        '_aws_accounts_json': aws_accounts_json  # pour JSON avec structure propre
+        '_aws_accounts_json': aws_accounts_json  # pour JSON avec structure
     }
     rows.append(row)
 
 # Write CSV
-with open('iam_identity_center_report.csv', 'w', newline='', encoding='utf-8') as csvfile:
+with open('iam_identity_center_report.csv', 'w', newline='',
+          encoding='utf-8') as csvfile:
     fieldnames = ['User', 'Groups', 'AWS Accounts']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     for row in rows:
-        # Ne garder que les champs du CSV (exclure les champs internes pour JSON)
-        csv_row = {k: v for k, v in row.items() if k in fieldnames}
+        # Ne garder que les champs du CSV (exclure les champs internes
+        # pour JSON)
+        csv_row = {k: v for k, v in row.items()
+                   if k in fieldnames}
         writer.writerow(csv_row)
 
 # Write XLSX
+
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
+
 wb = Workbook()
 ws = wb.active
 ws.title = "IAM Identity Center"
@@ -231,7 +250,9 @@ ws.append(fieldnames)
 for row in rows:
     ws.append([row[col] for col in fieldnames])
 # Style titres : gras, fond bleu clair, texte blanc
-header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+header_fill = PatternFill(start_color="4472C4",
+                          end_color="4472C4",
+                          fill_type="solid")
 for cell in ws[1]:
     cell.font = Font(bold=True, color="FFFFFF")
     cell.fill = header_fill
@@ -265,8 +286,11 @@ for row in rows:
         else:
             html_row[col] = val
     html_rows.append(html_row)
-html_df = pd.DataFrame(html_rows, columns=fieldnames)
-html_table = html_df.to_html(index=False, escape=False, classes="display nowrap", border=0)
+df = pd.DataFrame(html_rows, columns=fieldnames)
+for col in fieldnames:
+    df[col] = df[col].str.replace('\n', '<br>', regex=False)
+html_table = df.to_html(index=False, escape=False,
+                        classes="display nowrap", border=0)
 html_template = f'''
 <!DOCTYPE html>
 <html lang="en">
@@ -310,23 +334,27 @@ with open('iam_identity_center_report.html', 'w', encoding='utf-8') as f:
 
 end_time = datetime.now()
 duration = (end_time - start_time).total_seconds()
-print(f'CSV file iam_identity_center_report.csv generated.')
-print(f'XLSX file iam_identity_center_report.xlsx generated.')
+print('CSV file iam_identity_center_report.csv generated.')
+print('XLSX file iam_identity_center_report.xlsx generated.')
 print(f"Script started at: {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 print(f"Script ended at:   {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
 print(f"Total duration:    {duration:.2f} seconds")
 
 # Write JSON output
+
 import json
+
 json_rows = []
 for row in rows:
-    # Pour JSON, 'Groups' et 'AWS Accounts' sont des listes/objets structurés
+    # Pour JSON, 'Groups' et 'AWS Accounts' sont des listes/objets
+    # structurés
     json_row = {
         'User': row['User'],
         'Groups': row.get('_groups_list', []),
         'AWS Accounts': row.get('_aws_accounts_json', [])
     }
     json_rows.append(json_row)
-with open('iam_identity_center_report.json', 'w', encoding='utf-8') as jf:
+with open('iam_identity_center_report.json', 'w',
+          encoding='utf-8') as jf:
     json.dump(json_rows, jf, ensure_ascii=False, indent=2)
 print('JSON file iam_identity_center_report.json generated.')
