@@ -328,17 +328,21 @@ def get_account_name(account_id):
 
 
 print("Generating CSV and XLSX report...")
-fieldnames = [
+# Nouveaux fieldnames pour la structure user-account-role
+csv_fieldnames = [
     "User",
     "Groups",
-    "AWS Accounts",
-    "Role Details",
-    "Max Read Score",
-    "Max Write Score",
-    "Max Admin Score",
-    "Highest Risk Level",
+    "AWS Account",
+    "Account ID",
+    "Role Name",
+    "Access Level",
+    "Read Score",
+    "Write Score",
+    "Admin Score",
+    "Risk Level",
 ]
 rows = []
+json_rows = []  # Pour le JSON avec structure différente
 for idx, user in enumerate(users, 1):
     user_id = user["UserId"]
     username = user.get("UserName", user.get("DisplayName", user_id))
@@ -393,93 +397,98 @@ for idx, user in enumerate(users, 1):
                 f"AccountName={account_id_to_name[acc_id]}"
             )
         print(f"[DEBUG] Cyril - Final CSV Accounts: " f"{aws_accounts_lines}")
-    # Calculate user's maximum scores and risk level
-    max_read_score = 0
-    max_write_score = 0
-    max_admin_score = 0
-    role_details = []
-
     # Structure pour JSON : comptes avec rôles en listes et niveaux d'accès
     aws_accounts_json = []
-    for acc_id in sorted(accounts_roles.keys(), key=lambda x: get_account_name(x)):
-        acc_name = get_account_name(acc_id)
-        roles_with_access_level = []
-        for arn in sorted(accounts_roles[acc_id]):
-            role_name = get_permission_set_name(arn)
-            access_level = permission_set_arn_to_access_level.get(arn, "unknown")
-            scores = permission_set_arn_to_scores.get(
-                arn, {"read_score": 0, "write_score": 0, "admin_score": 0}
-            )
 
-            # Update maximum scores
-            max_read_score = max(max_read_score, scores["read_score"])
-            max_write_score = max(max_write_score, scores["write_score"])
-            max_admin_score = max(max_admin_score, scores["admin_score"])
+    # Générer une ligne par combinaison user-account-role pour CSV/XLSX/HTML
+    if accounts_roles:
+        for acc_id in sorted(accounts_roles.keys(), key=lambda x: get_account_name(x)):
+            acc_name = get_account_name(acc_id)
+            roles_with_access_level = []
 
-            # Add detailed role information for CSV/XLSX
-            role_details.append(
-                f"{role_name} ({access_level}: R{scores['read_score']}/W{scores['write_score']}/A{scores['admin_score']})"
-            )
+            for arn in sorted(accounts_roles[acc_id]):
+                role_name = get_permission_set_name(arn)
+                access_level = permission_set_arn_to_access_level.get(arn, "unknown")
+                scores = permission_set_arn_to_scores.get(
+                    arn, {"read_score": 0, "write_score": 0, "admin_score": 0}
+                )
 
-            roles_with_access_level.append(
+                # Determine risk level for this specific role
+                if scores["admin_score"] >= 8:
+                    risk_level = "CRITICAL"
+                elif scores["admin_score"] >= 5 or scores["write_score"] >= 8:
+                    risk_level = "HIGH"
+                elif scores["write_score"] >= 5:
+                    risk_level = "MEDIUM"
+                elif scores["read_score"] >= 5:
+                    risk_level = "LOW"
+                else:
+                    risk_level = "MINIMAL"
+
+                # Créer une ligne pour cette combinaison user-account-role
+                row = {
+                    "User": username,
+                    "Groups": groups_str,
+                    "AWS Account": acc_name,
+                    "Account ID": acc_id,
+                    "Role Name": role_name,
+                    "Access Level": access_level,
+                    "Read Score": scores["read_score"],
+                    "Write Score": scores["write_score"],
+                    "Admin Score": scores["admin_score"],
+                    "Risk Level": risk_level,
+                    "_groups_list": groups,  # pour JSON
+                }
+                rows.append(row)
+
+                # Pour le JSON, garder la structure groupée par compte
+                roles_with_access_level.append(
+                    {
+                        "name": role_name,
+                        "access_level": access_level,
+                        "read_score": scores["read_score"],
+                        "write_score": scores["write_score"],
+                        "admin_score": scores["admin_score"],
+                    }
+                )
+
+            # Ajouter le compte au JSON
+            aws_accounts_json.append(
                 {
-                    "name": role_name,
-                    "access_level": access_level,
-                    "read_score": scores["read_score"],
-                    "write_score": scores["write_score"],
-                    "admin_score": scores["admin_score"],
+                    "account_name": acc_name,
+                    "account_id": acc_id,
+                    "roles": roles_with_access_level,
                 }
             )
-        aws_accounts_json.append(
-            {
-                "account_name": acc_name,
-                "account_id": acc_id,
-                "roles": roles_with_access_level,
-            }
-        )
-
-    # Determine highest risk level
-    if max_admin_score >= 8:
-        highest_risk = "CRITICAL"
-    elif max_admin_score >= 5 or max_write_score >= 8:
-        highest_risk = "HIGH"
-    elif max_write_score >= 5:
-        highest_risk = "MEDIUM"
-    elif max_read_score >= 5:
-        highest_risk = "LOW"
     else:
-        highest_risk = "MINIMAL"
+        # Utilisateur sans rôles - créer une ligne vide
+        row = {
+            "User": username,
+            "Groups": groups_str,
+            "AWS Account": "",
+            "Account ID": "",
+            "Role Name": "",
+            "Access Level": "",
+            "Read Score": 0,
+            "Write Score": 0,
+            "Admin Score": 0,
+            "Risk Level": "MINIMAL",
+            "_groups_list": groups,  # pour JSON
+        }
+        rows.append(row)
 
-    role_details_str = "\n".join(role_details)
-
-    row = {
+    # Ajouter une ligne pour le JSON avec la structure complète de l'utilisateur
+    json_row = {
         "User": username,
-        "Groups": groups_str,
-        "AWS Accounts": aws_accounts_str,
-        "Role Details": role_details_str,
-        "Max Read Score": max_read_score,
-        "Max Write Score": max_write_score,
-        "Max Admin Score": max_admin_score,
-        "Highest Risk Level": highest_risk,
-        "_groups_list": groups,  # pour JSON
-        "_aws_accounts_json": aws_accounts_json,  # pour JSON avec structure
+        "Groups": groups,
+        "AWS Accounts": aws_accounts_json,
     }
-    rows.append(row)
+    json_rows.append(json_row)
 
 # Write CSV
 with open(
     "iam_identity_center_report.csv", "w", newline="", encoding="utf-8"
 ) as csvfile:
-    csv_fieldnames = [
-        "User",
-        "Groups",
-        "AWS Accounts",
-        "Role Details",
-        "Max Read Score",
-        "Max Write Score",
-        "Max Admin Score",
-        "Highest Risk Level",
-    ]
     writer = csv.DictWriter(csvfile, fieldnames=csv_fieldnames)
     writer.writeheader()
     for row in rows:
@@ -496,16 +505,7 @@ from openpyxl.utils import get_column_letter
 wb = Workbook()
 ws = wb.active
 ws.title = "IAM Identity Center"
-xlsx_fieldnames = [
-    "User",
-    "Groups",
-    "AWS Accounts",
-    "Role Details",
-    "Max Read Score",
-    "Max Write Score",
-    "Max Admin Score",
-    "Highest Risk Level",
-]
+xlsx_fieldnames = csv_fieldnames  # Use same fieldnames as CSV
 ws.append(xlsx_fieldnames)
 # Ajout des lignes de données après l'en-tête
 for row in rows:
@@ -540,16 +540,23 @@ import pandas as pd
 html_rows = []
 for row in rows:
     html_row = {}
-    for col in fieldnames:
-        val = row[col]
+    for col in csv_fieldnames:
+        val = row.get(col, "")
         if isinstance(val, str):
             html_row[col] = val.replace("\n", "<br>")
         else:
             html_row[col] = val
     html_rows.append(html_row)
-df = pd.DataFrame(html_rows, columns=fieldnames)
+df = pd.DataFrame(html_rows, columns=csv_fieldnames)
 # Only apply string replacement to text columns
-text_columns = ["User", "Groups", "AWS Accounts", "Role Details", "Highest Risk Level"]
+text_columns = [
+    "User",
+    "Groups",
+    "AWS Account",
+    "Role Name",
+    "Access Level",
+    "Risk Level",
+]
 for col in text_columns:
     if col in df.columns:
         df[col] = df[col].astype(str).str.replace("\n", "<br>", regex=False)
@@ -604,19 +611,8 @@ print(f"Script ended at:   {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
 print(f"Total duration:    {duration:.2f} seconds")
 
 # Write JSON output
-
 import json
 
-json_rows = []
-for row in rows:
-    # Pour JSON, 'Groups' et 'AWS Accounts' sont des listes/objets
-    # structurés
-    json_row = {
-        "User": row["User"],
-        "Groups": row.get("_groups_list", []),
-        "AWS Accounts": row.get("_aws_accounts_json", []),
-    }
-    json_rows.append(json_row)
 with open("iam_identity_center_report.json", "w", encoding="utf-8") as jf:
     json.dump(json_rows, jf, ensure_ascii=False, indent=2)
 print("JSON file iam_identity_center_report.json generated.")
