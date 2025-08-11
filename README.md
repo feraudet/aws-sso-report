@@ -1,6 +1,6 @@
 # AWS IAM Identity Center (SSO) Reporting Script
 
-[![Build Status](https://github.com/<your-org-or-user>/<repo-name>/actions/workflows/python.yml/badge.svg?branch=main)](https://github.com/<your-org-or-user>/<repo-name>/actions/workflows/python.yml)
+[![Build Status](https://github.com/feraudet/aws-sso-report/actions/workflows/python.yml/badge.svg?branch=main)](https://github.com/feraudet/aws-sso-report/actions/workflows/python.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Python 3.12](https://img.shields.io/badge/python-3.12%2B-blue)
 
@@ -19,8 +19,8 @@ Generate detailed reports of AWS IAM Identity Center (AWS SSO) users, groups, ro
 
 1. **Clone the repository:**
    ```bash
-   git clone <repo-url>
-   cd <repo-folder>
+   git clone https://github.com/feraudet/aws-sso-report.git
+   cd aws-sso-report
    ```
 2. **Create and activate a Python virtual environment:**
    ```bash
