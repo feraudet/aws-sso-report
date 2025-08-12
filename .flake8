@@ -1,4 +1,6 @@
 [flake8]
-max-line-length = 79
-ignore = E402,E501,E303,E302,E129,W503
-exclude = venv/,__pycache__/,.git/
+max-line-length = 88
+ignore = E203,E501,W503,E402,E303,E302,E129,D100,D101,D102,D103,D104,D105,D107,D400,D401
+exclude = venv/,__pycache__/,.git/,.pytest_cache/,build/,dist/
+per-file-ignores =
+    __init__.py:F401,I100,I201

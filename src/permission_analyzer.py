@@ -7,6 +7,7 @@ access levels and calculate permission scores.
 
 import json
 from typing import Tuple
+
 from .aws_clients import aws_clients
 from .data_models import AccessLevel, PermissionScores, Role
 
@@ -119,9 +120,11 @@ class PermissionAnalyzer:
 
         # Analyze inline policy
         if inline_policy:
-            write_actions, admin_actions, wildcard_actions = (
-                self._analyze_inline_policy(inline_policy)
-            )
+            (
+                write_actions,
+                admin_actions,
+                wildcard_actions,
+            ) = self._analyze_inline_policy(inline_policy)
 
             if wildcard_actions:
                 has_wildcard_actions = True

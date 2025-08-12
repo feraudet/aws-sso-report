@@ -7,14 +7,15 @@ from the collected IAM Identity Center data.
 
 import csv
 import json
-import pandas as pd
 from datetime import datetime
 from typing import List
+
+import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from .data_models import UserAccountRoleGroup, UserSummary, CSV_FIELDNAMES
+from .data_models import CSV_FIELDNAMES, UserAccountRoleGroup, UserSummary
 
 
 class ReportGenerator:

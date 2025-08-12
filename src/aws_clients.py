@@ -5,8 +5,9 @@ This module handles the initialization and configuration of AWS clients
 required for IAM Identity Center reporting.
 """
 
+from typing import Any, Dict
+
 import boto3
-from typing import Dict, Any
 
 
 class AWSClients:

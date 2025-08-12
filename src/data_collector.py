@@ -6,8 +6,9 @@ users, groups, accounts, permission sets, and assignments.
 """
 
 from typing import Dict, List, Set, Tuple
+
 from .aws_clients import aws_clients
-from .data_models import User, AWSAccount, Role, UserAccountRoleGroup, UserSummary
+from .data_models import AWSAccount, Role, User, UserAccountRoleGroup, UserSummary
 from .permission_analyzer import permission_analyzer
 
 
@@ -276,7 +277,7 @@ class DataCollector:
                             key = (account_id, ps_arn)
                             assignments[key] = page["AccountAssignments"]
 
-                except Exception:
+                except Exception:  # nosec B112
                     # Skip if no assignments for this combination
                     continue
 
