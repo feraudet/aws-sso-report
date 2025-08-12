@@ -2,9 +2,9 @@ name: Code Quality & Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ "**" ]  # Toutes les branches
   pull_request:
-    branches: [ main, develop ]
+    branches: [ "**" ]  # Tous les PRs vers toutes les branches
 
 jobs:
   quality-checks:
