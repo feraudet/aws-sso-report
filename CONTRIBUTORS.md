@@ -9,7 +9,7 @@ Merci à toutes les personnes qui ont contribué à ce projet ! 🎉
 
 ## 🤝 Contributors
 
-<!-- 
+<!--
 Cette section sera automatiquement mise à jour avec les contributeurs.
 Pour ajouter manuellement un contributeur :
 
@@ -30,7 +30,7 @@ Exemple :
 ### 💻 Code Contributors
 Personnes qui ont contribué au code source du projet.
 
-### 📚 Documentation Contributors  
+### 📚 Documentation Contributors
 Personnes qui ont amélioré la documentation, guides et exemples.
 
 ### 🐛 Bug Reporters

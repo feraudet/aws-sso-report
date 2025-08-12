@@ -85,10 +85,11 @@ chmod +x scripts/test-local.sh
 ./scripts/test-local.sh
 
 # Run specific test suites
-./scripts/test-local.sh tests      # Python tests only
-./scripts/test-local.sh precommit  # Pre-commit hooks only
-./scripts/test-local.sh quality    # Code quality checks only
-./scripts/test-local.sh act        # Test workflows with act
+./scripts/test-local.sh tests       # Python tests only
+./scripts/test-local.sh precommit   # Pre-commit hooks only
+./scripts/test-local.sh quality     # Code quality checks only
+./scripts/test-local.sh act         # Test workflows with act
+./scripts/test-local.sh commit-help # Show commit message examples
 
 # Show help
 ./scripts/test-local.sh help
@@ -136,27 +137,42 @@ hotfix/urgent-description     # Urgent fixes
 chore/task-description        # Maintenance, dependencies
 ```
 
-#### Commit Messages
-Use **Conventional Commits**:
+#### Commit Message Format
 
-```bash
-feat: add support for multiple AWS accounts
-fix: resolve timeout issue in data collection
-docs: update API documentation
-test: add unit tests for report generation
-chore: update dependencies to latest versions
+We use **Conventional Commits** for all commit messages. Our pre-commit hooks automatically validate your commit messages:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
 ```
 
-**Available Types:**
+**Types:**
 - `feat`: New feature
 - `fix`: Bug fix
-- `docs`: Documentation
-- `style`: Formatting, style
-- `refactor`: Refactoring
-- `perf`: Performance improvement
-- `test`: Tests
-- `chore`: Maintenance
-- `ci`: Continuous integration
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+- `perf`: Performance improvements
+- `ci`: CI/CD changes
+- `build`: Build system changes
+- `revert`: Revert previous commit
+
+**Examples:**
+```bash
+feat: add user authentication
+fix: resolve memory leak in data processing
+docs: update installation guide
+chore: update dependencies
+feat(auth): implement OAuth2 integration
+fix(api): handle null response in user endpoint
+```
+
+**💡 Tip:** Use `./scripts/test-local.sh commit-help` to see examples of valid and invalid commit messages.
 
 ### Code Standards
 
@@ -170,14 +186,14 @@ chore: update dependencies to latest versions
 ```python
 def collect_user_data(account_id: str, region: str = "us-east-1") -> List[User]:
     """Collect user data from AWS SSO.
-    
+
     Args:
         account_id: AWS account identifier
         region: AWS region (default: us-east-1)
-        
+
     Returns:
         List of User objects containing SSO data
-        
+
     Raises:
         AWSError: If AWS API call fails
         ValidationError: If account_id is invalid
@@ -197,10 +213,10 @@ def test_collect_user_data_with_valid_account():
     # Arrange
     account_id = "123456789012"
     expected_users = [User(id="user1", username="test")]
-    
+
     # Act
     result = collect_user_data(account_id)
-    
+
     # Assert
     assert len(result) > 0
     assert result[0].username == "test"

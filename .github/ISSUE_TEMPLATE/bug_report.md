@@ -65,7 +65,7 @@ python main.py --account 123456789012
 
 ### Generated Files
 - [ ] CSV generated
-- [ ] Excel generated  
+- [ ] Excel generated
 - [ ] JSON generated
 - [ ] HTML generated
 
@@ -80,7 +80,7 @@ python main.py --account 123456789012
 ## 🏷️ Suggested Labels
 
 - [ ] `priority-high` - Critical blocking issue
-- [ ] `priority-medium` - Important but workaround available  
+- [ ] `priority-medium` - Important but workaround available
 - [ ] `priority-low` - Minor issue
 - [ ] `aws-api` - AWS API related issue
 - [ ] `data-processing` - Data processing issue

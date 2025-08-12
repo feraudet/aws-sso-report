@@ -68,16 +68,16 @@ run_precommit() {
 # Fonction pour exécuter les vérifications de qualité
 run_quality_checks() {
     log_info "Vérifications de qualité du code..."
-    
+
     log_info "Black formatting..."
     black --check --diff .
-    
+
     log_info "isort import sorting..."
     isort --check-only --diff .
-    
+
     log_info "flake8 linting..."
     flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-    
+
     log_info "bandit security checks..."
     bandit -r . -ll
 }
@@ -85,22 +85,58 @@ run_quality_checks() {
 # Fonction pour tester avec act
 run_act_tests() {
     log_info "Test des workflows avec act..."
-    
+
     if ! command -v act &> /dev/null; then
         log_error "act n'est pas installé. Installez-le avec: brew install act"
         exit 1
     fi
-    
+
     if ! docker info &> /dev/null; then
         log_error "Docker n'est pas en cours d'exécution. Démarrez Docker Desktop."
         exit 1
     fi
-    
+
     log_info "Test du workflow de qualité..."
     act --container-architecture linux/amd64 -j quality-checks
-    
+
     log_info "Test du workflow de validation des commits..."
     act pull_request --container-architecture linux/amd64 -W .github/workflows/commit-validation.yml
+}
+
+# Fonction pour tester les messages de commit
+test_commit_messages() {
+    log_info "Test des formats de messages de commit..."
+
+    # Messages valides
+    local valid_messages=(
+        "feat: add new feature"
+        "fix: resolve bug in authentication"
+        "docs: update README"
+        "style: format code with black"
+        "refactor: improve code structure"
+        "test: add unit tests"
+        "chore: update dependencies"
+    )
+
+    # Messages invalides
+    local invalid_messages=(
+        "add new feature"  # pas de type
+        "feat add feature"  # pas de :
+        "FEAT: add feature"  # type en majuscule
+        "feat:add feature"  # pas d'espace après :
+    )
+
+    log_info "✅ Exemples de messages valides:"
+    for msg in "${valid_messages[@]}"; do
+        echo "  - $msg"
+    done
+
+    log_info "❌ Exemples de messages invalides:"
+    for msg in "${invalid_messages[@]}"; do
+        echo "  - $msg"
+    done
+
+    log_info "Les hooks commit-msg valideront automatiquement vos messages lors des commits."
 }
 
 # Fonction pour afficher l'aide
@@ -112,6 +148,7 @@ show_help() {
     echo "  precommit       Exécuter les hooks pre-commit"
     echo "  quality         Exécuter les vérifications de qualité"
     echo "  act             Tester les workflows avec act"
+    echo "  commit-help     Afficher les exemples de messages de commit"
     echo "  all             Exécuter tous les tests (tests + precommit + quality)"
     echo "  help            Afficher cette aide"
     echo ""
@@ -132,6 +169,9 @@ case "${1:-all}" in
     "act")
         run_act_tests
         ;;
+    "commit-help")
+        test_commit_messages
+        ;;
     "all")
         log_info "Exécution de tous les tests..."
         run_precommit
@@ -139,7 +179,7 @@ case "${1:-all}" in
         run_tests
         log_success "Tous les tests ont réussi!"
         ;;
-    "help"|"-h"|"--help")
+    "help"|'-h'|'--help')
         show_help
         ;;
     *)
