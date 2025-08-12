@@ -96,9 +96,9 @@ The user or role executing this script requires the following minimal permission
    ```
 2. **Run the script:**
    ```bash
-   ./iam.py
-   # ou
-   python iam.py
+   ./main.py
+   # or
+   python main.py
    ```
 3. **Output files:**
    - `iam_identity_center_report.csv` (spreadsheet)
