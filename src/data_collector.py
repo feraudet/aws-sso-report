@@ -71,6 +71,9 @@ class DataCollector:
             # Infer user status based on assignments
             user_status = "Enabled" if user_assignments_with_groups else "Disabled"
 
+            # Extract primary email address
+            user_email = self._get_user_primary_email(user_data)
+
             # Create final user object with inferred status
             user = User(
                 id=user_data["UserId"],
@@ -78,6 +81,7 @@ class DataCollector:
                     "UserName", user_data.get("DisplayName", user_data["UserId"])
                 ),
                 display_name=user_data.get("DisplayName"),
+                email=user_email,
                 groups=self._get_user_groups(user_data["UserId"], group_memberships),
                 status=user_status,
             )
@@ -148,6 +152,37 @@ class DataCollector:
                 user_account_roles.append(empty_user_account_role_group)
 
         return user_account_roles, user_summaries
+
+    def _get_user_primary_email(self, user_data: Dict) -> str:
+        """
+        Extract the primary email address from user data.
+
+        Args:
+            user_data: User data dictionary from AWS Identity Store
+
+        Returns:
+            Primary email address or "N/A" if not found
+        """
+        try:
+            emails = user_data.get("Emails", [])
+
+            if not emails:
+                return "N/A"
+
+            # Look for primary email first
+            for email_obj in emails:
+                if email_obj.get("Primary", False):
+                    return email_obj.get("Value", "N/A")
+
+            # If no primary email found, return the first email
+            if emails:
+                return emails[0].get("Value", "N/A")
+
+            return "N/A"
+
+        except (KeyError, TypeError, IndexError) as e:
+            print(f"Warning: Could not extract email from user data: {e}")
+            return "N/A"
 
     def get_users(self) -> List[Dict]:
         """Get all users from Identity Store."""

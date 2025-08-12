@@ -88,6 +88,7 @@ class User:
     id: str
     username: str
     display_name: Optional[str] = None
+    email: str = "N/A"  # Primary email address from Identity Store
     groups: List[str] = None
     status: str = "Unknown"  # Enabled/Disabled - inferred from assignments
 
@@ -117,6 +118,7 @@ class UserAccountRoleGroup:
         """Convert to dictionary for CSV/Excel export."""
         return {
             "User": self.user.name,
+            "User Email": self.user.email,
             "User Status": self.user.status,
             "Responsible Group": self.responsible_group or "DIRECT",
             "Assignment Type": self.assignment_type,
@@ -154,6 +156,7 @@ class UserSummary:
 # CSV field names for exports
 CSV_FIELDNAMES = [
     "User",
+    "User Email",
     "User Status",
     "Responsible Group",
     "Assignment Type",
