@@ -45,7 +45,7 @@ class AWSClients:
     @property
     def cloudtrail(self):
         """Get CloudTrail client."""
-        if not hasattr(self, '_cloudtrail') or self._cloudtrail is None:
+        if not hasattr(self, "_cloudtrail") or self._cloudtrail is None:
             self._cloudtrail = self.session.client("cloudtrail")
         return self._cloudtrail
 

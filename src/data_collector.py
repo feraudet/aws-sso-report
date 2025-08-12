@@ -49,10 +49,6 @@ class DataCollector:
             f"Found {len(users)} users, {len(accounts)} accounts, {len(permission_sets)} permission sets"
         )
 
-
-
-
-
         # Process each user
         user_account_roles = []
         user_summaries = []
@@ -67,14 +63,14 @@ class DataCollector:
                 display_name=user_data.get("DisplayName"),
                 groups=self._get_user_groups(user_data["UserId"], group_memberships),
             )
-            
+
             user_assignments_with_groups = self._get_user_assignments_with_groups(
                 temp_user, assignments, group_memberships
             )
-            
+
             # Infer user status based on assignments
             user_status = "Enabled" if user_assignments_with_groups else "Disabled"
-            
+
             # Create final user object with inferred status
             user = User(
                 id=user_data["UserId"],
@@ -83,10 +79,12 @@ class DataCollector:
                 ),
                 display_name=user_data.get("DisplayName"),
                 groups=self._get_user_groups(user_data["UserId"], group_memberships),
-                status=user_status
+                status=user_status,
             )
 
-            print(f"[{idx}/{len(users)}] Processing user: {user.name} (Status: {user.status})")
+            print(
+                f"[{idx}/{len(users)}] Processing user: {user.name} (Status: {user.status})"
+            )
 
             # Create UserAccountRoleGroup objects
             aws_accounts_json = []
