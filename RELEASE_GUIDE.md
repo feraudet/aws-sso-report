@@ -91,6 +91,10 @@ Le script automatise :
 Si vous préférez créer une release manuellement :
 
 ```bash
+# Activer l'environnement virtuel
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
 # 1. Mettre à jour la version dans pyproject.toml et src/__version__.py
 # 2. Générer le changelog
 git-cliff --tag v1.0.0 --output CHANGELOG.md
@@ -150,6 +154,10 @@ git push origin v1.0.0
 ### Installation et configuration
 
 ```bash
+# Activer l'environnement virtuel d'abord
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+
 # Installation (déjà fait)
 brew install act
 
@@ -174,14 +182,20 @@ GITHUB_TOKEN=your_github_token_here
 
 ## 🔧 Configuration des hooks pre-commit
 
-### Installation
+### Local Validation
 
 ```bash
-# Installation des hooks
-pre-commit install
-pre-commit install --hook-type commit-msg
+# Activate virtual environment first
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
 
-# Test des hooks
+# Install commitlint locally
+npm install -g @commitlint/cli @commitlint/config-conventional
+
+# Test your commit message
+echo "feat: add new feature" | commitlint
+
+# Run pre-commit hooks
 pre-commit run --all-files
 ```
 
