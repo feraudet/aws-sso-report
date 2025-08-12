@@ -43,6 +43,13 @@ class AWSClients:
         return self._organizations
 
     @property
+    def cloudtrail(self):
+        """Get CloudTrail client."""
+        if not hasattr(self, '_cloudtrail') or self._cloudtrail is None:
+            self._cloudtrail = self.session.client("cloudtrail")
+        return self._cloudtrail
+
+    @property
     def instance_arn(self) -> str:
         """Get SSO instance ARN."""
         if self._instance_arn is None:

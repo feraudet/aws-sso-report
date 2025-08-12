@@ -89,6 +89,7 @@ class User:
     username: str
     display_name: Optional[str] = None
     groups: List[str] = None
+    status: str = "Unknown"  # Enabled/Disabled - inferred from assignments
 
     def __post_init__(self):
         if self.groups is None:
@@ -116,6 +117,7 @@ class UserAccountRoleGroup:
         """Convert to dictionary for CSV/Excel export."""
         return {
             "User": self.user.name,
+            "User Status": self.user.status,
             "Responsible Group": self.responsible_group or "DIRECT",
             "Assignment Type": self.assignment_type,
             "AWS Account": self.account.name,
@@ -152,6 +154,7 @@ class UserSummary:
 # CSV field names for exports
 CSV_FIELDNAMES = [
     "User",
+    "User Status",
     "Responsible Group",
     "Assignment Type",
     "AWS Account",
