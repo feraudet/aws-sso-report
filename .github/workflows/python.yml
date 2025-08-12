@@ -51,11 +51,15 @@ jobs:
 
     - name: Check trailing whitespace
       run: |
-        if git diff --check HEAD~1 HEAD; then
-          echo "✅ No trailing whitespace found"
-        else
-          echo "❌ Trailing whitespace detected"
+        echo "🔍 Checking for trailing whitespace..."
+        # Use grep to find files with trailing whitespace, excluding venv and other non-source directories
+        if find . -path './venv' -prune -o -path './.git' -prune -o -path './node_modules' -prune -o -path './.cache' -prune -o \( -name '*.py' -o -name '*.yml' -o -name '*.yaml' -o -name '*.md' -o -name '*.txt' -o -name '*.json' -o -name '*.js' -o -name '*.sh' \) -print | xargs grep -l '[[:space:]]$' 2>/dev/null; then
+          echo "❌ Files with trailing whitespace found:"
+          find . -path './venv' -prune -o -path './.git' -prune -o -path './node_modules' -prune -o -path './.cache' -prune -o \( -name '*.py' -o -name '*.yml' -o -name '*.yaml' -o -name '*.md' -o -name '*.txt' -o -name '*.json' -o -name '*.js' -o -name '*.sh' \) -print | xargs grep -l '[[:space:]]$' 2>/dev/null
+          echo "Please run 'pre-commit run trailing-whitespace --all-files' to fix."
           exit 1
+        else
+          echo "✅ No trailing whitespace found"
         fi
 
     - name: Verify Black formatting
