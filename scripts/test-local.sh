@@ -155,7 +155,7 @@ show_help() {
     echo "Si aucune commande n'est spécifiée, 'all' sera exécuté."
 }
 
-# Traitement des arguments
+# Process arguments
 case "${1:-all}" in
     "tests")
         run_tests

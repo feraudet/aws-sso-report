@@ -12,7 +12,7 @@ Ce guide explique comment utiliser le système de release automatique et les con
 
 ## 📝 Format des messages de commit
 
-Ce projet utilise les **Conventional Commits** pour standardiser les messages de commit et automatiser la génération du changelog.
+This project uses **Conventional Commits** to standardize commit messages and automate changelog generation.
 
 ### Format de base
 
@@ -123,7 +123,7 @@ git push origin v1.0.0
 - ✅ Installation des dépendances
 - ✅ Exécution des hooks pre-commit
 - ✅ Vérification du formatage (Black, isort)
-- ✅ Analyse statique (flake8, bandit, mypy)
+- ✅ Static analysis (flake8, bandit, mypy)
 - ✅ Tests fonctionnels
 
 ### 2. Workflow de validation des commits (`commit-validation.yml`)
@@ -207,8 +207,8 @@ pre-commit run --all-files
 - ✅ **requirements-txt-fixer** : Trie requirements.txt
 - ✅ **black** : Formatage du code Python
 - ✅ **isort** : Tri des imports
-- ✅ **flake8** : Analyse statique
-- ✅ **bandit** : Analyse de sécurité
+- ✅ **flake8**: Static analysis
+- ✅ **bandit**: Security analysis
 - ✅ **conventional-pre-commit** : Validation des messages de commit
 
 ## 🚨 Dépannage
