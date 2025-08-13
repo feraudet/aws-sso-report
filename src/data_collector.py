@@ -9,7 +9,7 @@ from typing import Dict, List, Set, Tuple
 
 from .aws_clients import aws_clients
 from .data_models import AWSAccount, Role, User, UserAccountRoleGroup, UserSummary
-from .permission_analyzer import permission_analyzer
+from .permission_analyzer_v2 import permission_analyzer_v2
 
 
 class DataCollector:
@@ -245,8 +245,8 @@ class DataCollector:
                 )
                 ps_name = ps_details["PermissionSet"]["Name"]
 
-                # Create role with analysis
-                role = permission_analyzer.create_role_from_permission_set(
+                # Create role with analysis using new scoring system
+                role = permission_analyzer_v2.create_role_from_permission_set(
                     ps_arn, ps_name
                 )
                 permission_sets[ps_arn] = role

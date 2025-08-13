@@ -1,0 +1,210 @@
+# AWS Permission Scoring Configuration
+# This file defines how AWS actions are scored for risk assessment
+
+# Risk levels and their numeric scores
+risk_levels:
+  minimal: 1
+  low: 3
+  medium: 5
+  high: 8
+  critical: 10
+
+# Default scores for unknown actions
+defaults:
+  read_score: 2
+  write_score: 5
+  admin_score: 0
+
+# Service-specific action categorization
+services:
+  # AWS Identity and Access Management (IAM)
+  iam:
+    actions:
+      # Critical IAM actions (privilege escalation)
+      "iam:CreateRole":
+        risk_level: critical
+        description: "Can create new roles for privilege escalation"
+      "iam:AttachUserPolicy":
+        risk_level: critical
+        description: "Can escalate privileges by attaching policies to users"
+      "iam:AttachRolePolicy":
+        risk_level: critical
+        description: "Can escalate privileges by attaching policies to roles"
+      "iam:PutUserPolicy":
+        risk_level: critical
+        description: "Can add inline policies to users"
+      "iam:PutRolePolicy":
+        risk_level: critical
+        description: "Can add inline policies to roles"
+      "iam:PassRole":
+        risk_level: critical
+        description: "Can pass roles to AWS services for privilege escalation"
+
+      # High risk IAM actions
+      "iam:DeleteRole":
+        risk_level: high
+        description: "Can delete IAM roles"
+      "iam:DeleteUser":
+        risk_level: high
+        description: "Can delete IAM users"
+
+      # Medium risk IAM actions
+      "iam:TagRole":
+        risk_level: medium
+        description: "Can tag IAM roles"
+      "iam:ListRoles":
+        risk_level: low
+        description: "Can list IAM roles (read-only)"
+
+      # Low risk IAM actions (read-only)
+      "iam:GetRole":
+        risk_level: low
+        description: "Can read role details"
+      "iam:GetUser":
+        risk_level: low
+        description: "Can read user details"
+
+  # AWS Key Management Service (KMS)
+  kms:
+    actions:
+      # KMS Decrypt should be low risk (read-only operation)
+      "kms:Decrypt":
+        risk_level: low
+        description: "Can decrypt data (needed to access encrypted resources)"
+      "kms:Encrypt":
+        risk_level: low
+        description: "Can encrypt data"
+      "kms:GenerateDataKey":
+        risk_level: low
+        description: "Can generate data keys for encryption"
+
+      # High risk KMS actions
+      "kms:CreateKey":
+        risk_level: high
+        description: "Can create new KMS keys"
+      "kms:DeleteKey":
+        risk_level: critical
+        description: "Can delete KMS keys (irreversible)"
+      "kms:DisableKey":
+        risk_level: high
+        description: "Can disable KMS keys"
+
+  # Amazon S3
+  s3:
+    actions:
+      # Low risk S3 actions (read-only)
+      "s3:GetObject":
+        risk_level: low
+        description: "Can read S3 objects"
+      "s3:ListBucket":
+        risk_level: low
+        description: "Can list S3 bucket contents"
+
+      # Medium risk S3 actions
+      "s3:PutObject":
+        risk_level: medium
+        description: "Can write objects to S3"
+
+      # High risk S3 actions
+      "s3:DeleteObject":
+        risk_level: high
+        description: "Can delete S3 objects"
+      "s3:DeleteBucket":
+        risk_level: critical
+        description: "Can delete entire S3 buckets"
+
+  # Amazon EC2 Security Groups
+  ec2:
+    actions:
+      # Critical security actions
+      "ec2:AuthorizeSecurityGroupIngress":
+        risk_level: critical
+        description: "Can open firewall ports (security risk)"
+      "ec2:AuthorizeSecurityGroupEgress":
+        risk_level: critical
+        description: "Can modify outbound firewall rules"
+      "ec2:RevokeSecurityGroupIngress":
+        risk_level: high
+        description: "Can close firewall ports"
+
+      # Medium risk EC2 actions
+      "ec2:DescribeInstances":
+        risk_level: low
+        description: "Can list EC2 instances (read-only)"
+      "ec2:StartInstances":
+        risk_level: medium
+        description: "Can start EC2 instances"
+      "ec2:StopInstances":
+        risk_level: medium
+        description: "Can stop EC2 instances"
+
+      # High risk EC2 actions
+      "ec2:TerminateInstances":
+        risk_level: high
+        description: "Can terminate EC2 instances"
+
+# Managed policy risk mappings
+managed_policies:
+  # Critical admin policies
+  "AdministratorAccess":
+    read_score: 10
+    write_score: 10
+    admin_score: 10
+    description: "Full administrative access"
+
+  "PowerUserAccess":
+    read_score: 10
+    write_score: 10
+    admin_score: 8
+    description: "Power user access (almost admin)"
+
+  # Read-only policies
+  "ReadOnlyAccess":
+    read_score: 8
+    write_score: 0
+    admin_score: 0
+    description: "Read-only access to all services"
+
+  # Service-specific policies
+  "EC2FullAccess":
+    read_score: 8
+    write_score: 8
+    admin_score: 3
+    description: "Full access to EC2 service"
+
+  "S3FullAccess":
+    read_score: 8
+    write_score: 8
+    admin_score: 2
+    description: "Full access to S3 service"
+
+# Pattern-based scoring for unknown actions
+patterns:
+  # Admin patterns
+  admin_patterns:
+    patterns:
+      - "*:*"
+      - ".*:.*Admin.*"
+      - ".*:.*Full.*"
+    score: 10
+
+  # Write patterns
+  write_patterns:
+    patterns:
+      - ".*:Create.*"
+      - ".*:Delete.*"
+      - ".*:Put.*"
+      - ".*:Update.*"
+      - ".*:Modify.*"
+      - ".*:Attach.*"
+      - ".*:Detach.*"
+    score: 6
+
+  # Read patterns
+  read_patterns:
+    patterns:
+      - ".*:Get.*"
+      - ".*:List.*"
+      - ".*:Describe.*"
+      - ".*:View.*"
+    score: 3

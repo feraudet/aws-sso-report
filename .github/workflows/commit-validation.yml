@@ -21,7 +21,7 @@ jobs:
     - name: Validate commit messages
       uses: wagoid/commitlint-github-action@v5
       with:
-        configFile: '.commitlintrc.json'
+        configFile: 'commitlint.config.js'
 
   semantic-release-dry-run:
     name: Semantic Release Dry Run

@@ -13,9 +13,10 @@ from typing import Any, Dict, List, Optional
 class AccessLevel(Enum):
     """Enumeration of access levels for roles."""
 
-    READ_ONLY = "read-only"
-    READ_WRITE = "read-write"
-    FULL_ADMIN = "full-admin"
+    READ_ONLY = "Read Only"
+    READ_WRITE = "Read Write"
+    FULL_ADMIN = "Admin"
+    NO_ACCESS = "No access"
     UNKNOWN = "unknown"
 
 
@@ -36,6 +37,7 @@ class PermissionScores:
     read_score: int = 0
     write_score: int = 0
     admin_score: int = 0
+    justification: str = ""  # Explanation of why this score was assigned
 
     def get_risk_level(self) -> RiskLevel:
         """Calculate risk level based on scores."""
@@ -114,6 +116,13 @@ class UserAccountRoleGroup:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for CSV/Excel export."""
+        # If user is disabled, override access level to "No access"
+        access_level = (
+            AccessLevel.NO_ACCESS.value
+            if self.user.status.lower() == "disabled"
+            else self.role.access_level.value
+        )
+
         return {
             "User": self.user.name,
             "User Email": self.user.email,
@@ -123,11 +132,12 @@ class UserAccountRoleGroup:
             "AWS Account": self.account.name,
             "Account ID": self.account.id,
             "Role Name": self.role.name,
-            "Access Level": self.role.access_level.value,
+            "Access Level": access_level,
             "Read Score": self.role.scores.read_score,
             "Write Score": self.role.scores.write_score,
             "Admin Score": self.role.scores.admin_score,
             "Risk Level": self.role.risk_level.value,
+            "Justification": self.role.scores.justification,
         }
 
 
@@ -166,4 +176,5 @@ CSV_FIELDNAMES = [
     "Write Score",
     "Admin Score",
     "Risk Level",
+    "Justification",
 ]

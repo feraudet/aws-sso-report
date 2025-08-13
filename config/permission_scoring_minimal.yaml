@@ -1,0 +1,353 @@
+# AWS Permission Scoring Configuration - Minimal Version
+# This file defines how AWS actions are scored for risk assessment
+
+# Risk levels and their numeric scores
+risk_levels:
+  minimal: 1
+  low: 3
+  medium: 5
+  high: 8
+  critical: 10
+
+# Default scores for unknown actions
+defaults:
+  read_score: 2
+  write_score: 5
+  admin_score: 0
+
+# Global scoring rules (for compatibility with existing code)
+scoring_rules:
+  risk_levels:
+    minimal: 1
+    low: 3
+    medium: 5
+    high: 8
+    critical: 10
+  defaults:
+    read_score: 2
+    write_score: 5
+    admin_score: 0
+
+# Weights for combining different scoring methods
+weights:
+  service_specific: 1.0
+  pattern_based: 0.7
+  managed_policy: 1.2
+
+# Pattern-based scoring for wildcard and common patterns
+patterns:
+  critical:
+    - "\\*"  # Full wildcard access (escaped for regex)
+    - "\\*:\\*"  # Service wildcard access (escaped for regex)
+  high:
+    - "iam:\\*"  # IAM wildcard (escaped for regex)
+    - "s3:\\*"   # S3 wildcard (escaped for regex)
+  medium: []
+  low: []
+
+# Special actions (wildcards and common patterns)
+special_actions:
+  "*":
+    risk_level: critical
+    description: "Full administrative access to all AWS services and actions"
+  "*:*":
+    risk_level: critical
+    description: "Wildcard access to all actions in all services"
+  "iam:*":
+    risk_level: high
+    description: "Full access to all IAM operations"
+  "s3:*":
+    risk_level: high
+    description: "Full access to all S3 operations"
+
+# Service-specific action categorization
+services:
+  # AWS Identity and Access Management (IAM)
+  iam:
+    actions:
+      # Critical IAM actions (privilege escalation)
+      "iam:CreateRole":
+        risk_level: critical
+        description: "Can create new roles for privilege escalation"
+      "iam:AttachUserPolicy":
+        risk_level: critical
+        description: "Can escalate privileges by attaching policies to users"
+      "iam:AttachRolePolicy":
+        risk_level: critical
+        description: "Can escalate privileges by attaching policies to roles"
+      "iam:PutUserPolicy":
+        risk_level: critical
+        description: "Can add inline policies to users"
+      "iam:PutRolePolicy":
+        risk_level: critical
+        description: "Can add inline policies to roles"
+      "iam:PassRole":
+        risk_level: critical
+        description: "Can pass roles to AWS services for privilege escalation"
+
+      # Low risk IAM actions (read-only)
+      "iam:GetRole":
+        risk_level: low
+        description: "Can read role details"
+      "iam:GetUser":
+        risk_level: low
+        description: "Can read user details"
+      "iam:ListRoles":
+        risk_level: low
+        description: "Can list IAM roles (read-only)"
+
+  # AWS Key Management Service (KMS)
+  kms:
+    actions:
+      # KMS Decrypt should be low risk (read-only operation)
+      "kms:Decrypt":
+        risk_level: low
+        description: "Can decrypt data (needed to access encrypted resources)"
+      "kms:Encrypt":
+        risk_level: low
+        description: "Can encrypt data"
+
+      # High risk KMS actions
+      "kms:CreateKey":
+        risk_level: high
+        description: "Can create new KMS keys"
+      "kms:DeleteKey":
+        risk_level: critical
+        description: "Can delete KMS keys (irreversible)"
+
+  # Amazon S3
+  s3:
+    actions:
+      # Low risk S3 actions (read-only)
+      "s3:GetObject":
+        risk_level: low
+        description: "Can read S3 objects"
+      "s3:ListBucket":
+        risk_level: low
+        description: "Can list S3 bucket contents"
+
+      # Medium risk S3 actions
+      "s3:PutObject":
+        risk_level: medium
+        description: "Can write objects to S3"
+
+      # High risk S3 actions
+      "s3:DeleteObject":
+        risk_level: high
+        description: "Can delete S3 objects"
+      "s3:DeleteBucket":
+        risk_level: critical
+        description: "Can delete entire S3 buckets"
+
+  # Amazon EC2 Security Groups and Networking
+  ec2:
+    actions:
+      # Critical security actions
+      "ec2:AuthorizeSecurityGroupIngress":
+        risk_level: critical
+        description: "Can open firewall ports (security risk)"
+      "ec2:AuthorizeSecurityGroupEgress":
+        risk_level: critical
+        description: "Can modify outbound firewall rules"
+      "ec2:RevokeSecurityGroupIngress":
+        risk_level: high
+        description: "Can close firewall ports"
+      "ec2:CreateSecurityGroup":
+        risk_level: high
+        description: "Can create new security groups"
+      "ec2:DeleteSecurityGroup":
+        risk_level: high
+        description: "Can delete security groups"
+
+      # VPC Critical Actions
+      "ec2:CreateVpc":
+        risk_level: critical
+        description: "Can create new VPCs (network isolation)"
+      "ec2:DeleteVpc":
+        risk_level: critical
+        description: "Can delete VPCs (network disruption)"
+      "ec2:CreateInternetGateway":
+        risk_level: critical
+        description: "Can create internet gateways (external access)"
+      "ec2:AttachInternetGateway":
+        risk_level: critical
+        description: "Can attach internet gateways (expose to internet)"
+      "ec2:CreateVpnGateway":
+        risk_level: critical
+        description: "Can create VPN gateways (external connectivity)"
+      "ec2:CreateVpcPeeringConnection":
+        risk_level: critical
+        description: "Can create VPC peering (cross-network access)"
+
+      # Route Table Actions
+      "ec2:CreateRoute":
+        risk_level: high
+        description: "Can create network routes (traffic redirection)"
+      "ec2:DeleteRoute":
+        risk_level: high
+        description: "Can delete network routes (traffic disruption)"
+      "ec2:ReplaceRoute":
+        risk_level: high
+        description: "Can modify network routes (traffic redirection)"
+
+      # Low risk EC2 actions
+      "ec2:DescribeInstances":
+        risk_level: low
+        description: "Can list EC2 instances (read-only)"
+      "ec2:DescribeVpcs":
+        risk_level: low
+        description: "Can list VPCs (read-only)"
+      "ec2:DescribeSecurityGroups":
+        risk_level: low
+        description: "Can list security groups (read-only)"
+
+  # AWS GuardDuty (Threat Detection)
+  guardduty:
+    actions:
+      # Critical GuardDuty actions
+      "guardduty:DeleteDetector":
+        risk_level: critical
+        description: "Can disable threat detection (security blind spot)"
+      "guardduty:StopMonitoringMembers":
+        risk_level: critical
+        description: "Can stop monitoring accounts (security gap)"
+      "guardduty:UpdateDetector":
+        risk_level: high
+        description: "Can modify threat detection settings"
+      "guardduty:CreateIPSet":
+        risk_level: medium
+        description: "Can create IP allowlists/blocklists"
+
+      # Low risk GuardDuty actions
+      "guardduty:GetDetector":
+        risk_level: low
+        description: "Can read threat detection configuration"
+      "guardduty:ListDetectors":
+        risk_level: low
+        description: "Can list threat detectors (read-only)"
+
+  # AWS CloudTrail (Audit Logging)
+  cloudtrail:
+    actions:
+      # Critical CloudTrail actions
+      "cloudtrail:StopLogging":
+        risk_level: critical
+        description: "Can disable audit logging (compliance violation)"
+      "cloudtrail:DeleteTrail":
+        risk_level: critical
+        description: "Can delete audit trails (evidence destruction)"
+      "cloudtrail:PutEventSelectors":
+        risk_level: high
+        description: "Can modify what events are logged"
+      "cloudtrail:UpdateTrail":
+        risk_level: high
+        description: "Can modify audit trail configuration"
+
+      # Low risk CloudTrail actions
+      "cloudtrail:DescribeTrails":
+        risk_level: low
+        description: "Can list audit trails (read-only)"
+      "cloudtrail:GetTrailStatus":
+        risk_level: low
+        description: "Can check audit trail status (read-only)"
+
+  # AWS Config (Compliance Monitoring)
+  config:
+    actions:
+      # Critical Config actions
+      "config:DeleteConfigurationRecorder":
+        risk_level: critical
+        description: "Can disable compliance monitoring"
+      "config:DeleteDeliveryChannel":
+        risk_level: critical
+        description: "Can stop compliance reporting"
+      "config:StopConfigurationRecorder":
+        risk_level: high
+        description: "Can pause compliance monitoring"
+
+      # Low risk Config actions
+      "config:DescribeConfigurationRecorders":
+        risk_level: low
+        description: "Can list compliance recorders (read-only)"
+      "config:GetComplianceDetailsByConfigRule":
+        risk_level: low
+        description: "Can read compliance details (read-only)"
+
+  # AWS Secrets Manager
+  secretsmanager:
+    actions:
+      # Critical Secrets Manager actions
+      "secretsmanager:DeleteSecret":
+        risk_level: critical
+        description: "Can delete secrets (credential loss)"
+      "secretsmanager:UpdateSecret":
+        risk_level: high
+        description: "Can modify secrets"
+      "secretsmanager:PutSecretValue":
+        risk_level: high
+        description: "Can update secret values"
+
+      # Medium risk - reading secrets
+      "secretsmanager:GetSecretValue":
+        risk_level: medium
+        description: "Can read secret values (credential access)"
+
+      # Low risk Secrets Manager actions
+      "secretsmanager:DescribeSecret":
+        risk_level: low
+        description: "Can read secret metadata (no values)"
+      "secretsmanager:ListSecrets":
+        risk_level: low
+        description: "Can list secrets (read-only)"
+
+  # AWS Systems Manager (SSM)
+  ssm:
+    actions:
+      # Critical SSM actions
+      "ssm:SendCommand":
+        risk_level: critical
+        description: "Can execute commands on EC2 instances (remote access)"
+      "ssm:StartSession":
+        risk_level: critical
+        description: "Can start interactive sessions (shell access)"
+      "ssm:PutParameter":
+        risk_level: high
+        description: "Can store configuration parameters"
+      "ssm:DeleteParameter":
+        risk_level: high
+        description: "Can delete configuration parameters"
+
+      # Medium risk SSM actions
+      "ssm:GetParameter":
+        risk_level: medium
+        description: "Can read configuration parameters"
+      "ssm:GetParameters":
+        risk_level: medium
+        description: "Can read multiple configuration parameters"
+
+      # Low risk SSM actions
+      "ssm:DescribeInstanceInformation":
+        risk_level: low
+        description: "Can list managed instances (read-only)"
+
+# Managed policy risk mappings
+managed_policies:
+  # Critical admin policies
+  "AdministratorAccess":
+    read_score: 10
+    write_score: 10
+    admin_score: 10
+    description: "Full administrative access"
+
+  "PowerUserAccess":
+    read_score: 10
+    write_score: 10
+    admin_score: 8
+    description: "Power user access (almost admin)"
+
+  # Read-only policies
+  "ReadOnlyAccess":
+    read_score: 8
+    write_score: 0
+    admin_score: 0
+    description: "Read-only access to all services"

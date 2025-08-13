@@ -49,10 +49,34 @@ repos:
         pass_filenames: false
         always_run: true
 
-  # Conventional commits validation
-  - repo: https://github.com/compilerla/conventional-pre-commit
-    rev: v3.0.0
+  # Simple commit message validation (avoiding Node.js ICU issues)
+  - repo: local
     hooks:
-      - id: conventional-pre-commit
+      - id: commit-msg-validation
+        name: Validate commit message format
+        entry: bash
+        args:
+          - -c
+          - |
+            msg=$(cat "$0")
+            if [[ ! "$msg" =~ ^(feat|fix|docs|style|refactor|perf|test|chore|ci|build|revert)(\(.+\))?: ]]; then
+              echo "❌ Commit message must start with type: feat, fix, docs, style, refactor, perf, test, chore, ci, build, or revert"
+              echo "   Format: type(scope): description"
+              echo "   Example: feat(auth): add user login functionality"
+              exit 1
+            fi
+            subject=$(echo "$msg" | head -n1 | sed "s/^[^:]*: //")
+            if [[ ${#subject} -lt 10 ]]; then
+              echo "❌ Commit message subject must be at least 10 characters long"
+              echo "   Current: \"$subject\" (${#subject} characters)"
+              exit 1
+            fi
+            if [[ ${#subject} -gt 72 ]]; then
+              echo "❌ Commit message subject must be at most 72 characters long"
+              echo "   Current: \"$subject\" (${#subject} characters)"
+              exit 1
+            fi
+            echo "✅ Commit message format is valid"
+        language: system
         stages: [commit-msg]
-        args: [--strict]
+        pass_filenames: true

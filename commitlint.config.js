@@ -1,68 +1,68 @@
-// Configuration pour commitlint - validation des messages de commit
+// Configuration for commitlint - commit message validation
 module.exports = {
   extends: ['@commitlint/config-conventional'],
   rules: {
-    // Type de commit requis
+    // Required commit type
     'type-enum': [
       2,
       'always',
       [
-        'feat',     // nouvelle fonctionnalité
-        'fix',      // correction de bug
+        'feat',     // new feature
+        'fix',      // bug fix
         'docs',     // documentation
-        'style',    // formatage, point-virgules manquants, etc.
-        'refactor', // refactoring du code
-        'perf',     // amélioration des performances
-        'test',     // ajout de tests
+        'style',    // formatting, missing semicolons, etc.
+        'refactor', // code refactoring
+        'perf',     // performance improvement
+        'test',     // adding tests
         'chore',    // maintenance
-        'ci',       // intégration continue
-        'build',    // système de build
-        'revert'    // annulation d'un commit
+        'ci',       // continuous integration
+        'build',    // build system
+        'revert'    // commit revert
       ]
     ],
-    // Longueur du sujet
+    // Subject length
     'subject-max-length': [2, 'always', 72],
     'subject-min-length': [2, 'always', 10],
-    // Format du sujet
+    // Subject format
     'subject-case': [2, 'always', 'lower-case'],
     'subject-empty': [2, 'never'],
     'subject-full-stop': [2, 'never', '.'],
-    // Format du type
+    // Type format
     'type-case': [2, 'always', 'lower-case'],
     'type-empty': [2, 'never'],
-    // Format du scope (optionnel)
+    // Scope format (optional)
     'scope-case': [2, 'always', 'lower-case'],
-    // Longueur du header
+    // Header length
     'header-max-length': [2, 'always', 100],
-    // Body et footer
+    // Body and footer
     'body-leading-blank': [2, 'always'],
     'footer-leading-blank': [2, 'always']
   },
-  // Messages d'aide personnalisés
+  // Custom help messages
   helpUrl: 'https://www.conventionalcommits.org/',
   prompt: {
     messages: {
-      type: 'Sélectionnez le type de changement que vous commitez:',
-      scope: 'Quel est le scope de ce changement (optionnel):',
-      customScope: 'Entrez un scope personnalisé:',
-      subject: 'Écrivez une description courte et impérative du changement:\n',
-      body: 'Fournissez une description plus détaillée du changement (optionnel):\n',
-      breaking: 'Listez les BREAKING CHANGES (optionnel):\n',
-      footer: 'Listez les ISSUES FERMÉES par ce changement (optionnel):\n',
-      confirmCommit: 'Êtes-vous sûr de vouloir procéder avec le commit ci-dessus?'
+      type: 'Select the type of change you are committing:',
+      scope: 'What is the scope of this change (optional):',
+      customScope: 'Enter a custom scope:',
+      subject: 'Write a short, imperative description of the change:\n',
+      body: 'Provide a more detailed description of the change (optional):\n',
+      breaking: 'List any BREAKING CHANGES (optional):\n',
+      footer: 'List any ISSUES CLOSED by this change (optional):\n',
+      confirmCommit: 'Are you sure you want to proceed with the commit above?'
     },
     types: [
-      { value: 'feat', name: 'feat:     ✨ Nouvelle fonctionnalité' },
-      { value: 'fix', name: 'fix:      🐛 Correction de bug' },
+      { value: 'feat', name: 'feat:     ✨ New feature' },
+      { value: 'fix', name: 'fix:      🐛 Bug fix' },
       { value: 'docs', name: 'docs:     📚 Documentation' },
-      { value: 'style', name: 'style:    🎨 Formatage, style' },
-      { value: 'refactor', name: 'refactor: ♻️  Refactoring' },
-      { value: 'perf', name: 'perf:     ⚡️ Amélioration des performances' },
-      { value: 'test', name: 'test:     🧪 Ajout de tests' },
+      { value: 'style', name: 'style:    🎨 Formatting, style' },
+      { value: 'refactor', name: 'refactor: ♾️  Refactoring' },
+      { value: 'perf', name: 'perf:     ⚡️ Performance improvement' },
+      { value: 'test', name: 'test:     🧪 Adding tests' },
       { value: 'chore', name: 'chore:    🔧 Maintenance' },
-      { value: 'ci', name: 'ci:       👷 Intégration continue' },
-      { value: 'build', name: 'build:    📦 Système de build' },
-      { value: 'revert', name: 'revert:   ⏪ Annulation de commit' }
+      { value: 'ci', name: 'ci:       👷 Continuous integration' },
+      { value: 'build', name: 'build:    📦 Build system' },
+      { value: 'revert', name: 'revert:   ⏪ Commit revert' }
     ]
   }
 };

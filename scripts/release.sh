@@ -129,7 +129,7 @@ echo -e "  pyproject.toml: $(grep -E '^version = ' pyproject.toml)"
 echo -e "  __version__.py: $(grep -E '^__version__ = ' src/__version__.py)"
 
 # Générer le changelog pour cette version
-echo -e "${BLUE}📚 Génération du changelog...${NC}"
+echo -e "${BLUE}📚 Generating changelog...${NC}"
 if command -v git-cliff &> /dev/null; then
     git-cliff --tag "$NEW_TAG" --output CHANGELOG.md
     echo -e "${GREEN}✅ Changelog généré dans CHANGELOG.md${NC}"
