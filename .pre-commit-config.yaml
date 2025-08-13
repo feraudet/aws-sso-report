@@ -44,7 +44,7 @@ repos:
     hooks:
       - id: pytest
         name: pytest
-        entry: bash -c 'source venv/bin/activate && python -m pytest tests/test_data_models.py tests/test_utils.py tests/test_aws_clients.py tests/test_report_generators.py tests/test_data_collector_simple.py -v'
+        entry: python -m pytest tests/test_data_models.py tests/test_utils.py tests/test_aws_clients.py tests/test_report_generators.py tests/test_data_collector_simple.py -v
         language: system
         pass_filenames: false
         always_run: true
