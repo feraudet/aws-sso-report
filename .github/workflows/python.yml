@@ -106,6 +106,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Run unit tests with pytest
+      run: |
+        python -m pytest tests/test_data_models.py -v --tb=short
+
     - name: Test imports and basic functionality
       run: |
         python -c "
@@ -117,21 +121,6 @@ jobs:
         except ImportError as e:
             print(f'❌ Import error: {e}')
             exit(1)
-        "
-
-    - name: Test data models
-      run: |
-        python -c "
-        from src.data_models import User, AccessLevel, RiskLevel
-
-        # Test User creation
-        user = User(id='test-123', username='testuser', email='test@example.com')
-        print(f'✅ User created: {user.username} ({user.email})')
-
-        # Test enum values
-        assert AccessLevel.READ_ONLY.value == 'Read Only'
-        assert RiskLevel.LOW.value == 'LOW'
-        print('✅ Enums working correctly')
         "
 
     - name: Test configuration files
