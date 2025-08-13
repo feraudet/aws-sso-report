@@ -194,9 +194,42 @@ class PermissionAnalyzerV2:
                 if any("Inline policy" in part for part in justification_parts):
                     final_scores.justification += " plus additional inline permissions"
             elif any("ReadOnlyAccess" in part for part in justification_parts):
-                final_scores.justification = (
-                    "Read-only access via ReadOnlyAccess managed policy"
+                # Check if there are additional permissions beyond ReadOnlyAccess
+                has_additional_permissions = (
+                    final_scores.write_score > 0 or final_scores.admin_score > 0
                 )
+
+                if has_additional_permissions:
+                    # List additional permission sources
+                    additional_sources = []
+                    for part in justification_parts:
+                        if "ReadOnlyAccess" not in part:
+                            if "Managed policy" in part:
+                                policy_name = (
+                                    part.split("'")[1]
+                                    if "'" in part
+                                    else "managed policy"
+                                )
+                                additional_sources.append(
+                                    f"'{policy_name}' managed policy"
+                                )
+                            elif "Inline policy" in part:
+                                additional_sources.append("inline policy")
+
+                    if additional_sources:
+                        final_scores.justification = (
+                            f"Read-only access via ReadOnlyAccess managed policy, "
+                            f"plus write/admin permissions from {', '.join(additional_sources)}"
+                        )
+                    else:
+                        final_scores.justification = (
+                            "Read-only access via ReadOnlyAccess managed policy, "
+                            "plus additional write/admin permissions"
+                        )
+                else:
+                    final_scores.justification = (
+                        "Read-only access via ReadOnlyAccess managed policy"
+                    )
             elif (
                 len(justification_parts) == 1
                 and "Single managed policy" in justification_parts[0]
