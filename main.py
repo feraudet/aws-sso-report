@@ -13,11 +13,12 @@ Author: Cyril Feraudet <cyril.feraudet@nuant.com>
 License: GPL v3
 """
 
-import sys
 import signal
-from src.utils import validate_aws_credentials, handle_keyboard_interrupt
+import sys
+
 from src.data_collector import data_collector
 from src.report_generators import ReportGenerator
+from src.utils import handle_keyboard_interrupt, validate_aws_credentials
 
 
 def signal_handler(signum, frame):

@@ -6,8 +6,9 @@ users, groups, accounts, permission sets, and assignments.
 """
 
 from typing import Dict, List, Set, Tuple
+
 from .aws_clients import aws_clients
-from .data_models import User, AWSAccount, Role, UserAccountRoleGroup, UserSummary
+from .data_models import AWSAccount, Role, User, UserAccountRoleGroup, UserSummary
 from .permission_analyzer import permission_analyzer
 
 
@@ -276,7 +277,7 @@ class DataCollector:
                             key = (account_id, ps_arn)
                             assignments[key] = page["AccountAssignments"]
 
-                except Exception:
+                except Exception:  # nosec B112
                     # Skip if no assignments for this combination
                     continue
 
@@ -372,5 +373,24 @@ class DataCollector:
         return user_assignments
 
 
-# Global instance for convenience
-data_collector = DataCollector()
+# Global instance for convenience (lazy initialization)
+_data_collector_instance = None
+
+
+def get_data_collector() -> DataCollector:
+    """Get or create the global data collector instance."""
+    global _data_collector_instance
+    if _data_collector_instance is None:
+        _data_collector_instance = DataCollector()
+    return _data_collector_instance
+
+
+# For backward compatibility, create a property-like access
+class _DataCollectorProxy:
+    """Proxy class to provide backward compatibility for data_collector global."""
+
+    def __getattr__(self, name):
+        return getattr(get_data_collector(), name)
+
+
+data_collector = _DataCollectorProxy()

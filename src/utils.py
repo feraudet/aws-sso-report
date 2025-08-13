@@ -4,8 +4,12 @@ Utilities
 This module contains utility functions and helpers used across the application.
 """
 
+import json
+import re
 import sys
-from typing import Any, Dict
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 def print_progress(current: int, total: int, message: str = "Processing"):
@@ -57,3 +61,50 @@ def handle_keyboard_interrupt():
     """Handle keyboard interrupt gracefully."""
     print("\n\nOperation cancelled by user.")
     sys.exit(1)
+
+
+def save_to_json(data: List[Dict[str, Any]], filename: str) -> None:
+    """Save data to JSON file."""
+    path = Path(filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with path.open("w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def load_from_json(filename: str) -> List[Dict[str, Any]]:
+    """Load data from JSON file."""
+    try:
+        path = Path(filename)
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+    except json.JSONDecodeError:
+        return []
+
+
+def format_timestamp(timestamp: Optional[datetime]) -> str:
+    """Format timestamp to ISO string."""
+    if timestamp is None:
+        return "N/A"
+    return timestamp.isoformat()
+
+
+def validate_email(email: Optional[str]) -> bool:
+    """Validate email address format."""
+    if not email or not isinstance(email, str):
+        return False
+
+    # Basic email validation regex
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+
+    # Check length (reasonable limit)
+    if len(email) > 254:
+        return False
+
+    # Check for spaces
+    if " " in email:
+        return False
+
+    return bool(re.match(pattern, email))

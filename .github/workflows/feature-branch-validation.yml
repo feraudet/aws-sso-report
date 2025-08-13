@@ -1,0 +1,168 @@
+name: Feature Branch Validation
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
+      - 'chore/**'
+  pull_request:
+    branches: [ "**" ]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  quick-validation:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install basic dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black isort flake8 bandit
+
+    - name: Quick code formatting check
+      run: |
+        echo "🔍 Vérification rapide du formatage..."
+        black --check --diff . || (echo "❌ Le code n'est pas formaté correctement. Exécutez 'black .' pour corriger." && exit 1)
+        isort --check-only --diff . || (echo "❌ Les imports ne sont pas triés. Exécutez 'isort .' pour corriger." && exit 1)
+
+    - name: Quick linting
+      run: |
+        echo "🔍 Analyse rapide du code..."
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: Security check
+      run: |
+        echo "🔒 Vérification de sécurité..."
+        bandit -r . -f json -o bandit-report.json || true
+        bandit -r . -ll
+
+    - name: Validate branch naming
+      run: |
+        BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+        echo "🏷️ Validation du nom de branche: $BRANCH_NAME"
+
+        # Vérifier que la branche suit les conventions de nommage
+        if [[ "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix|chore)/.+ ]]; then
+          echo "✅ Nom de branche valide: $BRANCH_NAME"
+        elif [[ "$BRANCH_NAME" =~ ^(main|develop|master)$ ]]; then
+          echo "✅ Branche principale: $BRANCH_NAME"
+        else
+          echo "❌ Nom de branche invalide: $BRANCH_NAME"
+          echo "Les branches doivent suivre le format: feature/*, bugfix/*, hotfix/*, ou chore/*"
+          echo "Exemples valides:"
+          echo "  - feature/add-user-auth"
+          echo "  - bugfix/fix-login-issue"
+          echo "  - hotfix/security-patch"
+          echo "  - chore/update-dependencies"
+          exit 1
+        fi
+
+    - name: Check for TODO/FIXME comments
+      run: |
+        echo "📝 Recherche de commentaires TODO/FIXME..."
+        TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX\|HACK" --include="*.py" --include="*.js" --include="*.ts" . | wc -l || echo "0")
+
+        if [ "$TODO_COUNT" -gt 0 ]; then
+          echo "⚠️ $TODO_COUNT commentaires TODO/FIXME trouvés:"
+          grep -r "TODO\|FIXME\|XXX\|HACK" --include="*.py" --include="*.js" --include="*.ts" . || true
+          echo ""
+          echo "💡 Considérez créer des issues GitHub pour ces éléments avant de merger."
+        else
+          echo "✅ Aucun commentaire TODO/FIXME trouvé"
+        fi
+
+  dependency-check:
+    name: Dependency Security Check
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install safety
+      run: |
+        pip install safety
+
+    - name: Check for known security vulnerabilities
+      run: |
+        echo "🔒 Vérification des vulnérabilités de sécurité dans les dépendances..."
+        safety check --json --output safety-report.json || true
+        safety check || echo "⚠️ Des vulnérabilités ont été détectées. Vérifiez le rapport ci-dessus."
+
+    - name: Upload safety report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: safety-security-report
+        path: safety-report.json
+
+  pr-size-check:
+    name: PR Size Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Check PR size
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const pr = context.payload.pull_request;
+          const additions = pr.additions;
+          const deletions = pr.deletions;
+          const changes = additions + deletions;
+
+          console.log(`📊 Statistiques du PR:`);
+          console.log(`  Ajouts: ${additions}`);
+          console.log(`  Suppressions: ${deletions}`);
+          console.log(`  Total changements: ${changes}`);
+
+          let message = `## 📊 Analyse du PR\n\n`;
+          message += `- **Lignes ajoutées**: ${additions}\n`;
+          message += `- **Lignes supprimées**: ${deletions}\n`;
+          message += `- **Total changements**: ${changes}\n\n`;
+
+          if (changes > 1000) {
+            message += `⚠️ **PR volumineux** (${changes} lignes modifiées)\n`;
+            message += `Considérez diviser ce PR en plusieurs plus petits pour faciliter la review.\n\n`;
+          } else if (changes > 500) {
+            message += `🟡 **PR de taille moyenne** (${changes} lignes modifiées)\n`;
+            message += `Assurez-vous que les changements sont bien organisés.\n\n`;
+          } else {
+            message += `✅ **PR de bonne taille** (${changes} lignes modifiées)\n\n`;
+          }
+
+          // Ajouter un commentaire sur le PR
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: message
+          });

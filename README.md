@@ -87,6 +87,47 @@ The user or role executing this script requires the following minimal permission
 - **IAM Identity Center**: Must be enabled in the organization
 - **Permissions**: The executing user/role needs the above minimal policy attached
 
+## Development Setup
+
+### Quick Setup
+```bash
+# Setup development environment with pre-commit hooks
+./setup-dev.sh
+```
+
+### Manual Setup
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Install pre-commit hooks
+pre-commit install
+
+# Run pre-commit on all files
+pre-commit run --all-files
+```
+
+### Available Development Commands
+```bash
+make format          # Format code with black and isort
+make lint            # Run all linters (flake8, mypy, bandit, pylint)
+make test            # Run tests
+make pre-commit-run  # Run pre-commit on all files
+make clean           # Clean up generated files
+make setup-dev       # Complete development setup
+```
+
+### Code Quality Tools
+This project uses several code quality tools:
+- **Black**: Code formatter (88 char line length)
+- **isort**: Import sorter (compatible with Black)
+- **flake8**: Linting with additional plugins (docstrings, import order, bugbear)
+- **mypy**: Type checking
+- **bandit**: Security linting
+- **pylint**: Additional linting (minimal config)
+
+Pre-commit hooks will automatically run these tools on git commit.
+
 ## Usage
 
 1. **Configure AWS authentication** (SSO, profile, env vars, etc). Example for SSO:
@@ -128,7 +169,7 @@ The user or role executing this script requires the following minimal permission
           "access_level": "full-admin"
         },
         {
-          "name": "ReadOnlyRole", 
+          "name": "ReadOnlyRole",
           "access_level": "read-only"
         }
       ]

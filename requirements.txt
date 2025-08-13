@@ -1,3 +1,22 @@
+# Production dependencies
+bandit>=1.7.0
+black>=23.0.0
 boto3
+coverage>=7.0.0
+flake8>=6.0.0
+flake8-bugbear>=23.0.0
+flake8-docstrings>=1.7.0
+flake8-import-order>=0.18.0
+isort>=5.12.0
+mypy>=1.0.0
 openpyxl
 pandas
+pre-commit>=3.0.0
+pylint>=3.0.0
+
+# Test dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+PyYAML>=6.0
+toml>=0.10.0

@@ -6,8 +6,8 @@ IAM Identity Center reporting application.
 """
 
 from dataclasses import dataclass
-from typing import List, Dict, Optional
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class AccessLevel(Enum):
@@ -109,12 +109,10 @@ class UserAccountRoleGroup:
     user: User
     account: AWSAccount
     role: Role
-    responsible_group: Optional[str] = (
-        None  # Group name or "DIRECT" for direct assignment
-    )
+    responsible_group: Optional[str] = None
     assignment_type: str = "UNKNOWN"  # "USER" or "GROUP"
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for CSV/Excel export."""
         return {
             "User": self.user.name,
@@ -144,7 +142,7 @@ class UserSummary:
         if self.accounts is None:
             self.accounts = []
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON export."""
         return {
             "User": self.user.name,

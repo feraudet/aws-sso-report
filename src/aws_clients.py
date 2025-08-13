@@ -5,8 +5,9 @@ This module handles the initialization and configuration of AWS clients
 required for IAM Identity Center reporting.
 """
 
+from typing import Any, Dict
+
 import boto3
-from typing import Dict, Any
 
 
 class AWSClients:
@@ -82,5 +83,24 @@ class AWSClients:
         }
 
 
-# Global instance for backward compatibility
-aws_clients = AWSClients()
+# Global instance for backward compatibility (lazy initialization)
+_aws_clients_instance = None
+
+
+def get_aws_clients() -> AWSClients:
+    """Get or create the global AWS clients instance."""
+    global _aws_clients_instance
+    if _aws_clients_instance is None:
+        _aws_clients_instance = AWSClients()
+    return _aws_clients_instance
+
+
+# For backward compatibility, create a property-like access
+class _AWSClientsProxy:
+    """Proxy class to provide backward compatibility for aws_clients global."""
+
+    def __getattr__(self, name):
+        return getattr(get_aws_clients(), name)
+
+
+aws_clients = _AWSClientsProxy()

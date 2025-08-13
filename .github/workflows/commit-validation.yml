@@ -1,0 +1,74 @@
+name: Commit Message Validation
+
+on:
+  push:
+    branches: [ "**" ]  # Validation sur toutes les branches
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [ "**" ]  # Tous les PRs vers toutes les branches
+
+jobs:
+  validate-commits:
+    name: Validate Commit Messages
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Validate commit messages
+      uses: wagoid/commitlint-github-action@v5
+      with:
+        configFile: '.commitlintrc.json'
+
+  semantic-release-dry-run:
+    name: Semantic Release Dry Run
+    runs-on: ubuntu-latest
+    needs: validate-commits
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install semantic-release
+      run: |
+        npm install -g semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/npm @semantic-release/github
+
+    - name: Dry run semantic release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        npx semantic-release --dry-run --no-ci
+
+    - name: Comment PR with next version
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { execSync } = require('child_process');
+          try {
+            const output = execSync('npx semantic-release --dry-run --no-ci 2>&1', { encoding: 'utf8' });
+            const versionMatch = output.match(/The next release version is (\d+\.\d+\.\d+)/);
+
+            if (versionMatch) {
+              const nextVersion = versionMatch[1];
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🚀 **Next Release Version**: \`v${nextVersion}\`\n\nThis PR will trigger a new release when merged to main.`
+              });
+            }
+          } catch (error) {
+            console.log('No release will be triggered by this PR');
+          }

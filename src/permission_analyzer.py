@@ -7,6 +7,7 @@ access levels and calculate permission scores.
 
 import json
 from typing import Tuple
+
 from .aws_clients import aws_clients
 from .data_models import AccessLevel, PermissionScores, Role
 
@@ -119,9 +120,11 @@ class PermissionAnalyzer:
 
         # Analyze inline policy
         if inline_policy:
-            write_actions, admin_actions, wildcard_actions = (
-                self._analyze_inline_policy(inline_policy)
-            )
+            (
+                write_actions,
+                admin_actions,
+                wildcard_actions,
+            ) = self._analyze_inline_policy(inline_policy)
 
             if wildcard_actions:
                 has_wildcard_actions = True
@@ -226,5 +229,24 @@ class PermissionAnalyzer:
         )
 
 
-# Global instance for convenience
-permission_analyzer = PermissionAnalyzer()
+# Global instance for convenience (lazy initialization)
+_permission_analyzer_instance = None
+
+
+def get_permission_analyzer() -> PermissionAnalyzer:
+    """Get or create the global permission analyzer instance."""
+    global _permission_analyzer_instance
+    if _permission_analyzer_instance is None:
+        _permission_analyzer_instance = PermissionAnalyzer()
+    return _permission_analyzer_instance
+
+
+# For backward compatibility, create a property-like access
+class _PermissionAnalyzerProxy:
+    """Proxy class to provide backward compatibility for permission_analyzer global."""
+
+    def __getattr__(self, name):
+        return getattr(get_permission_analyzer(), name)
+
+
+permission_analyzer = _PermissionAnalyzerProxy()

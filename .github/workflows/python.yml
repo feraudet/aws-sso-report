@@ -1,32 +1,192 @@
-name: Python package
+name: Code Quality & Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "**" ]  # Toutes les branches
   pull_request:
-    branches: [ main ]
+    branches: [ "**" ]  # Tous les PRs vers toutes les branches
 
 jobs:
-  build:
+  quality-checks:
+    name: Code Quality Checks
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Lint with flake8
+
+    - name: Install pre-commit
       run: |
-        pip install flake8
-        flake8 .
-    - name: Format with black
+        pip install pre-commit
+
+    - name: Cache pre-commit environments
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pre-commit
+        key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pre-commit-
+
+    - name: Run pre-commit hooks
       run: |
-        pip install black
-        black --check .
-    - name: Run script (dry run)
+        pre-commit run --all-files
+
+    - name: Check trailing whitespace
       run: |
-        python iam.py || true
+        echo "🔍 Checking for trailing whitespace..."
+        # Use grep to find files with trailing whitespace, excluding venv and other non-source directories
+        if find . -path './venv' -prune -o -path './.git' -prune -o -path './node_modules' -prune -o -path './.cache' -prune -o \( -name '*.py' -o -name '*.yml' -o -name '*.yaml' -o -name '*.md' -o -name '*.txt' -o -name '*.json' -o -name '*.js' -o -name '*.sh' \) -print | xargs grep -l '[[:space:]]$' 2>/dev/null; then
+          echo "❌ Files with trailing whitespace found:"
+          find . -path './venv' -prune -o -path './.git' -prune -o -path './node_modules' -prune -o -path './.cache' -prune -o \( -name '*.py' -o -name '*.yml' -o -name '*.yaml' -o -name '*.md' -o -name '*.txt' -o -name '*.json' -o -name '*.js' -o -name '*.sh' \) -print | xargs grep -l '[[:space:]]$' 2>/dev/null
+          echo "Please run 'pre-commit run trailing-whitespace --all-files' to fix."
+          exit 1
+        else
+          echo "✅ No trailing whitespace found"
+        fi
+
+    - name: Verify Black formatting
+      run: |
+        black --check --diff .
+
+    - name: Verify isort import sorting
+      run: |
+        isort --check-only --diff .
+
+    - name: Run flake8 linting
+      run: |
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+
+    - name: Run bandit security checks
+      run: |
+        bandit -r . -f json -o bandit-report.json || true
+        bandit -r . -ll
+
+    - name: Upload bandit report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: bandit-security-report
+        path: bandit-report.json
+
+  functional-tests:
+    name: Functional Tests
+    runs-on: ubuntu-latest
+    needs: quality-checks
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Test imports and basic functionality
+      run: |
+        python -c "
+        try:
+            from src.data_models import User, Role, AWSAccount
+            from src.data_collector import DataCollector
+            from src.report_generators import ReportGenerator
+            print('✅ All imports successful')
+        except ImportError as e:
+            print(f'❌ Import error: {e}')
+            exit(1)
+        "
+
+    - name: Test data models
+      run: |
+        python -c "
+        from src.data_models import User, AccessLevel, RiskLevel
+
+        # Test User creation
+        user = User(id='test-123', username='testuser', email='test@example.com')
+        print(f'✅ User created: {user.username} ({user.email})')
+
+        # Test enum values
+        assert AccessLevel.READ_ONLY.value == 'read-only'
+        assert RiskLevel.LOW.value == 'LOW'
+        print('✅ Enums working correctly')
+        "
+
+    - name: Test configuration files
+      run: |
+        python -c "
+        import yaml
+        import toml
+
+        # Test YAML config
+        with open('.pre-commit-config.yaml', 'r') as f:
+            config = yaml.safe_load(f)
+            assert 'repos' in config
+            print('✅ Pre-commit config valid')
+
+        # Test TOML config
+        with open('pyproject.toml', 'r') as f:
+            config = toml.load(f)
+            assert 'tool' in config
+            print('✅ Pyproject.toml valid')
+        "
+
+    - name: Validate project structure
+      run: |
+        echo "🔍 Checking project structure..."
+
+        # Check required files
+        required_files=(
+          "main.py"
+          "requirements.txt"
+          "README.md"
+          ".pre-commit-config.yaml"
+          "pyproject.toml"
+          ".flake8"
+          "Makefile"
+        )
+
+        for file in "${required_files[@]}"; do
+          if [[ -f "$file" ]]; then
+            echo "✅ $file exists"
+          else
+            echo "❌ $file missing"
+            exit 1
+          fi
+        done
+
+        # Check required directories
+        required_dirs=("src" "tests" ".github/workflows")
+
+        for dir in "${required_dirs[@]}"; do
+          if [[ -d "$dir" ]]; then
+            echo "✅ $dir/ exists"
+          else
+            echo "❌ $dir/ missing"
+            exit 1
+          fi
+        done
+
+        echo "✅ Project structure validated"

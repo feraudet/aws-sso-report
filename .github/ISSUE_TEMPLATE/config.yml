@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions GitHub
+    url: https://github.com/cferaudet/aws-sso-report/discussions
+    about: Pour les questions générales, idées et discussions communautaires
+  - name: 📚 Documentation
+    url: https://github.com/cferaudet/aws-sso-report/blob/main/README.md
+    about: Consultez la documentation complète du projet
+  - name: 🚀 Guide de contribution
+    url: https://github.com/cferaudet/aws-sso-report/blob/main/CONTRIBUTING.md
+    about: Apprenez comment contribuer au projet
+  - name: 📖 Guide de release
+    url: https://github.com/cferaudet/aws-sso-report/blob/main/RELEASE_GUIDE.md
+    about: Guide pour les releases et les commits conventionnels
