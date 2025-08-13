@@ -209,7 +209,7 @@ pytest
 
 ## Author
 
-Cyril Feraudet <cyril.feraudet@nuagic.com>
+Cyril Feraudet <cyril@feraudet.com>
 
 ## Development & Maintenance
 - Code is formatted with [Black](https://github.com/psf/black)

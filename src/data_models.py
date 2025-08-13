@@ -37,6 +37,7 @@ class PermissionScores:
     read_score: int = 0
     write_score: int = 0
     admin_score: int = 0
+    justification: str = ""  # Explanation of why this score was assigned
 
     def get_risk_level(self) -> RiskLevel:
         """Calculate risk level based on scores."""
@@ -136,6 +137,7 @@ class UserAccountRoleGroup:
             "Write Score": self.role.scores.write_score,
             "Admin Score": self.role.scores.admin_score,
             "Risk Level": self.role.risk_level.value,
+            "Justification": self.role.scores.justification,
         }
 
 
@@ -174,4 +176,5 @@ CSV_FIELDNAMES = [
     "Write Score",
     "Admin Score",
     "Risk Level",
+    "Justification",
 ]
