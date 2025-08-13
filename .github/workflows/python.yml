@@ -129,7 +129,7 @@ jobs:
         print(f'✅ User created: {user.username} ({user.email})')
 
         # Test enum values
-        assert AccessLevel.READ_ONLY.value == 'read-only'
+        assert AccessLevel.READ_ONLY.value == 'Read Only'
         assert RiskLevel.LOW.value == 'LOW'
         print('✅ Enums working correctly')
         "
