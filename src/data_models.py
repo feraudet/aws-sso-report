@@ -109,9 +109,7 @@ class UserAccountRoleGroup:
     user: User
     account: AWSAccount
     role: Role
-    responsible_group: Optional[
-        str
-    ] = None  # Group name or "DIRECT" for direct assignment
+    responsible_group: Optional[str] = None
     assignment_type: str = "UNKNOWN"  # "USER" or "GROUP"
 
     def to_dict(self) -> Dict[str, Any]:
