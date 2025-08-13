@@ -158,6 +158,7 @@ class TestUserAccountRoleGroup:
         assert result["AWS Account"] == "Prod"
         assert result["Account ID"] == "123456789012"
         assert result["Role Name"] == "Admin"
+        assert result["Access Level"] == role.access_level.value
         assert result["Read Score"] == 5
         assert result["Write Score"] == 7
         assert result["Admin Score"] == 9
@@ -172,6 +173,78 @@ class TestUserAccountRoleGroup:
 
         assert assignment.responsible_group is None
         assert assignment.assignment_type == "UNKNOWN"
+
+    def test_user_account_role_group_disabled_user_access_level(self):
+        """Test that disabled users get 'No access' access level."""
+        from src.data_models import AccessLevel, PermissionScores
+
+        # Create a disabled user
+        user = User(
+            id="user123",
+            username="john.doe",
+            email="john@example.com",
+            display_name="John Doe",
+            status="Disabled",
+        )
+        account = AWSAccount(id="123456789012", name="Prod")
+        role = Role(name="Admin", arn="arn:aws:sso:::ps-123")
+        role.access_level = AccessLevel.FULL_ADMIN
+        role.scores = PermissionScores(read_score=5, write_score=7, admin_score=9)
+
+        assignment = UserAccountRoleGroup(
+            user=user,
+            account=account,
+            role=role,
+            responsible_group="DevOps Team",
+            assignment_type="GROUP",
+        )
+
+        result = assignment.to_dict()
+
+        # Even though role has FULL_ADMIN access, disabled user should show "No access"
+        assert result["Access Level"] == "No access"
+        assert result["User Status"] == "Disabled"
+
+    def test_user_account_role_group_enabled_user_access_level(self):
+        """Test that enabled users get their actual access level."""
+        from src.data_models import AccessLevel, PermissionScores
+
+        # Create an enabled user
+        user = User(
+            id="user123",
+            username="john.doe",
+            email="john@example.com",
+            display_name="John Doe",
+            status="Enabled",
+        )
+        account = AWSAccount(id="123456789012", name="Prod")
+        role = Role(name="ReadOnlyRole", arn="arn:aws:sso:::ps-123")
+        role.access_level = AccessLevel.READ_ONLY
+        role.scores = PermissionScores(read_score=5, write_score=0, admin_score=0)
+
+        assignment = UserAccountRoleGroup(
+            user=user,
+            account=account,
+            role=role,
+            responsible_group="DevOps Team",
+            assignment_type="GROUP",
+        )
+
+        result = assignment.to_dict()
+
+        # Enabled user should show their actual access level
+        assert result["Access Level"] == "Read Only"
+        assert result["User Status"] == "Enabled"
+
+    def test_access_level_values(self):
+        """Test that AccessLevel enum has the correct values."""
+        from src.data_models import AccessLevel
+
+        assert AccessLevel.READ_ONLY.value == "Read Only"
+        assert AccessLevel.READ_WRITE.value == "Read Write"
+        assert AccessLevel.FULL_ADMIN.value == "Admin"
+        assert AccessLevel.NO_ACCESS.value == "No access"
+        assert AccessLevel.UNKNOWN.value == "unknown"
 
 
 class TestUserSummary:
