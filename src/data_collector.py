@@ -7,6 +7,7 @@ users, groups, accounts, permission sets, and assignments.
 
 from typing import Dict, List, Set, Tuple
 
+from .account_classifier import AccountClassifier
 from .aws_clients import aws_clients
 from .data_models import AWSAccount, Role, User, UserAccountRoleGroup, UserSummary
 from .permission_analyzer_v2 import permission_analyzer_v2
@@ -21,6 +22,9 @@ class DataCollector:
         self.organizations = aws_clients.organizations
         self.instance_arn = aws_clients.instance_arn
         self.identity_store_id = aws_clients.identity_store_id
+
+        # Initialize account classifier
+        self.account_classifier = AccountClassifier()
 
         # Caches
         self._users_cache = None
@@ -224,6 +228,10 @@ class DataCollector:
         for page in paginator.paginate():
             for account_data in page["Accounts"]:
                 account = AWSAccount(id=account_data["Id"], name=account_data["Name"])
+                # Classify the account using the account classifier
+                account.classification = self.account_classifier.classify_account(
+                    account
+                )
                 accounts[account.id] = account
 
         self._accounts_cache = accounts

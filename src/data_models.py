@@ -78,6 +78,7 @@ class AWSAccount:
 
     id: str
     name: str
+    classification: str = "Unclassified"
 
     def __str__(self) -> str:
         return f"{self.name} ({self.id})"
@@ -131,6 +132,7 @@ class UserAccountRoleGroup:
             "Assignment Type": self.assignment_type,
             "AWS Account": self.account.name,
             "Account ID": self.account.id,
+            "Account Classification": self.account.classification,
             "Role Name": self.role.name,
             "Access Level": access_level,
             "Read Score": self.role.scores.read_score,
@@ -161,6 +163,91 @@ class UserSummary:
         }
 
 
+@dataclass
+class UserAnalysis:
+    """Represents a unique user for analysis export."""
+
+    username: str
+    email: str
+    access_by_classification: Dict[str, str] = None
+
+    def __post_init__(self):
+        if self.access_by_classification is None:
+            self.access_by_classification = {}
+
+    def to_dict(self, classifications: List[str] = None) -> Dict[str, Any]:
+        """Convert to dictionary for CSV export."""
+        result = {
+            "User": self.username,
+            "Email": self.email,
+        }
+
+        # Add columns for each classification
+        if classifications:
+            for classification in classifications:
+                result[classification] = self.access_by_classification.get(
+                    classification, "No Access"
+                )
+
+        return result
+
+
+@dataclass
+class AccountAnalysis:
+    """Represents an account analysis for export."""
+
+    account_name: str
+    account_id: str
+    classification: str
+    user_count: int
+    admin_emails: List[str] = None
+    read_write_emails: List[str] = None
+    read_only_emails: List[str] = None
+
+    def __post_init__(self):
+        if self.admin_emails is None:
+            self.admin_emails = []
+        if self.read_write_emails is None:
+            self.read_write_emails = []
+        if self.read_only_emails is None:
+            self.read_only_emails = []
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for CSV export."""
+        return {
+            "Account Name": self.account_name,
+            "Account ID": self.account_id,
+            "Classification": self.classification,
+            "User Count": self.user_count,
+            "Admin Emails": "; ".join(sorted(self.admin_emails)),
+            "Read Write Emails": "; ".join(sorted(self.read_write_emails)),
+            "Read Only Emails": "; ".join(sorted(self.read_only_emails)),
+        }
+
+
+@dataclass
+class RiskAnalysis:
+    """Represents a risk analysis summary."""
+
+    classification: str
+    total_accounts: int
+    total_users: int
+    admin_users: int
+    high_risk_users: int
+    critical_risk_users: int
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for CSV export."""
+        return {
+            "Classification": self.classification,
+            "Total Accounts": self.total_accounts,
+            "Total Users": self.total_users,
+            "Admin Users": self.admin_users,
+            "High Risk Users": self.high_risk_users,
+            "Critical Risk Users": self.critical_risk_users,
+        }
+
+
 # CSV field names for exports
 CSV_FIELDNAMES = [
     "User",
@@ -170,6 +257,7 @@ CSV_FIELDNAMES = [
     "Assignment Type",
     "AWS Account",
     "Account ID",
+    "Account Classification",
     "Role Name",
     "Access Level",
     "Read Score",
@@ -177,4 +265,31 @@ CSV_FIELDNAMES = [
     "Admin Score",
     "Risk Level",
     "Justification",
+]
+
+# Base CSV field names for user analysis export (classifications will be added dynamically)
+ANALYSIS_CSV_BASE_FIELDNAMES = [
+    "User",
+    "Email",
+]
+
+# CSV field names for account analysis export
+ACCOUNT_ANALYSIS_CSV_FIELDNAMES = [
+    "Account Name",
+    "Account ID",
+    "Classification",
+    "User Count",
+    "Admin Emails",
+    "Read Write Emails",
+    "Read Only Emails",
+]
+
+# CSV field names for risk analysis export
+RISK_ANALYSIS_CSV_FIELDNAMES = [
+    "Classification",
+    "Total Accounts",
+    "Total Users",
+    "Admin Users",
+    "High Risk Users",
+    "Critical Risk Users",
 ]
