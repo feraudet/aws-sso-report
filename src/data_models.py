@@ -169,9 +169,7 @@ class UserAnalysis:
 
     username: str
     email: str
-    access_by_classification: Dict[
-        str, str
-    ] = None  # Classification -> highest access level
+    access_by_classification: Dict[str, str] = None
 
     def __post_init__(self):
         if self.access_by_classification is None:
