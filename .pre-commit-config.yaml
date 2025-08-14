@@ -109,4 +109,37 @@ repos:
             echo "✅ Commit message format is valid"
         language: system
         stages: [commit-msg]
-        pass_filenames: true
+
+  # Branch name validation
+  - repo: local
+    hooks:
+      - id: branch-name-validation
+        name: Validate branch naming convention
+        entry: bash
+        args:
+          - -c
+          - |
+            BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+            echo "🏷️ Validation du nom de branche: $BRANCH_NAME"
+
+            # Vérifier que la branche suit les conventions de nommage
+            if [[ "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix|chore)/.+ ]]; then
+              echo "✅ Nom de branche valide: $BRANCH_NAME"
+            elif [[ "$BRANCH_NAME" =~ ^(main|develop|master)$ ]]; then
+              echo "✅ Branche principale: $BRANCH_NAME"
+            else
+              echo "❌ Nom de branche invalide: $BRANCH_NAME"
+              echo "Les branches doivent suivre le format: feature/*, bugfix/*, hotfix/*, ou chore/*"
+              echo "Exemples valides:"
+              echo "  - feature/add-user-auth"
+              echo "  - bugfix/fix-login-issue"
+              echo "  - hotfix/security-patch"
+              echo "  - chore/update-dependencies"
+              echo ""
+              echo "💡 Pour renommer votre branche actuelle:"
+              echo "   git branch -m $BRANCH_NAME bugfix/${BRANCH_NAME#*/}"
+              exit 1
+            fi
+        language: system
+        pass_filenames: false
+        always_run: true
