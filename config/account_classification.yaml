@@ -1,0 +1,84 @@
+# AWS Account Classification Configuration
+# This file defines patterns to classify AWS accounts into different environments
+# based on account names using include/exclude patterns.
+
+classifications:
+  Production:
+    description: "Production environment accounts"
+    include:
+      - "-prod-"
+      - "-production"
+      - "-prd-"
+      - "prod"
+    exclude:
+      - "nonprod"
+      - "non-prod"
+      - "preprod"
+      - "pre-prod"
+
+  Staging:
+    description: "Staging and UAT environment accounts"
+    include:
+      - "-uat-"
+      - "-stg-"
+      - "-staging"
+      - "staging"
+      - "uat"
+    exclude: []
+
+  Development:
+    description: "Development environment accounts"
+    include:
+      - "-dev-"
+      - "-development"
+      - "dev"
+      - "development"
+    exclude:
+      - "devops"
+
+  Testing:
+    description: "Testing environment accounts"
+    include:
+      - "-test-"
+      - "-testing"
+      - "test"
+      - "testing"
+      - "-qa-"
+      - "qa"
+    exclude: []
+
+  Sandbox:
+    description: "Sandbox and experimental accounts"
+    include:
+      - "sandbox"
+      - "-sbx-"
+      - "experimental"
+      - "playground"
+    exclude: []
+
+  Security:
+    description: "Security and compliance accounts"
+    include:
+      - "security"
+      - "compliance"
+      - "audit"
+      - "logging"
+      - "log"
+    exclude: []
+
+  Shared:
+    description: "Shared services accounts"
+    include:
+      - "shared"
+      - "common"
+      - "core"
+      - "platform"
+      - "infra"
+      - "infrastructure"
+    exclude: []
+
+# Default classification for accounts that don't match any pattern
+default_classification: "Unclassified"
+
+# Case sensitivity setting
+case_sensitive: false
