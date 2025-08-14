@@ -47,15 +47,38 @@ jobs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "version_number=${VERSION#v}" >> $GITHUB_OUTPUT
 
+    - name: Install git-cliff
+      run: |
+        # Installation de git-cliff via GitHub releases avec version et architecture fixes
+        CLIFF_VERSION="2.6.1"
+        ARCH="x86_64"
+
+        echo "Downloading git-cliff v${CLIFF_VERSION} for ${ARCH}..."
+        curl -L -o git-cliff.tar.gz \
+          "https://github.com/orhun/git-cliff/releases/download/v${CLIFF_VERSION}/git-cliff-${CLIFF_VERSION}-${ARCH}-unknown-linux-gnu.tar.gz"
+
+        # Vérifier que le téléchargement a réussi
+        if [ ! -f git-cliff.tar.gz ] || [ ! -s git-cliff.tar.gz ]; then
+          echo "❌ Download failed, trying alternative method..."
+          # Fallback: installation via cargo
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source ~/.cargo/env
+          cargo install git-cliff --version ${CLIFF_VERSION}
+        else
+          echo "✅ Download successful, extracting..."
+          tar -xzf git-cliff.tar.gz
+          chmod +x git-cliff/git-cliff
+          sudo mv git-cliff/git-cliff /usr/local/bin/git-cliff
+        fi
+
+        # Vérifier l'installation
+        git-cliff --version
+
     - name: Generate changelog
       id: changelog
       run: |
-        # Installation de git-cliff pour générer le changelog
-        curl -L https://github.com/orhun/git-cliff/releases/latest/download/git-cliff-$(uname -m)-unknown-linux-gnu.tar.gz | tar -xz
-        chmod +x git-cliff
-
         # Génération du changelog pour cette version
-        ./git-cliff --tag ${{ steps.version.outputs.version }} --output CHANGELOG_RELEASE.md --strip header
+        git-cliff --tag ${{ steps.version.outputs.version }} --output CHANGELOG_RELEASE.md --strip header
 
         # Lecture du contenu pour l'utiliser dans la release
         echo "changelog<<EOF" >> $GITHUB_OUTPUT
