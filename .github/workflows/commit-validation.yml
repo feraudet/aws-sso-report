@@ -7,6 +7,11 @@ on:
     types: [opened, synchronize, reopened]
     branches: [ "**" ]  # Tous les PRs vers toutes les branches
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   validate-commits:
     name: Validate Commit Messages
