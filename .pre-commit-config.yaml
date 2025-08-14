@@ -122,6 +122,13 @@ repos:
             BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
             echo "🏷️ Validation du nom de branche: $BRANCH_NAME"
 
+            # Ignorer la validation si nous sommes en état détaché (HEAD) ou en merge
+            if [[ "$BRANCH_NAME" == "HEAD" ]]; then
+              echo "ℹ️ État détaché détecté (HEAD) - validation du nom de branche ignorée"
+              echo "✅ Ceci est normal lors des merges ou dans les CI/CD"
+              exit 0
+            fi
+
             # Vérifier que la branche suit les conventions de nommage
             if [[ "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix|chore)/.+ ]]; then
               echo "✅ Nom de branche valide: $BRANCH_NAME"
